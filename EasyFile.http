@@ -1,0 +1,6 @@
+@EasyFile_HostAddress = http://localhost:5192
+
+GET {{EasyFile_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
