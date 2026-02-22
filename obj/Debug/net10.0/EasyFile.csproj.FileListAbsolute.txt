@@ -157,3 +157,8 @@
 /Users/timperez/Documents/GitHub/EasyFile/obj/Debug/net10.0/EasyFile.genruntimeconfig.cache
 /Users/timperez/Documents/GitHub/EasyFile/obj/Debug/net10.0/ref/EasyFile.dll
 /Users/timperez/Documents/GitHub/EasyFile/obj/Debug/net10.0/EasyFile.sourcelink.json
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/easyfile-frontend/package-lock.json
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/easyfile-frontend/package.json
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/AWSSDK.Core.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/AWSSDK.Extensions.NETCore.Setup.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/AWSSDK.S3.dll
