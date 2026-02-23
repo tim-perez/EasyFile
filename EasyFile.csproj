@@ -23,7 +23,9 @@
     <Folder Include="Data/" />
     <Folder Include="easyfile-frontend/src/components/" />
     <Folder Include="Interfaces/" />
+    <Folder Include="Middlewares/" />
     <Folder Include="Repositories/" />
+    <Folder Include="Services/" />
   </ItemGroup>
 
 </Project>

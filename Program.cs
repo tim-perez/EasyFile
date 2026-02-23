@@ -4,6 +4,8 @@ using EasyFile.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using Amazon.S3;
+using EasyFile.Middlewares;
+using EasyFile.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,10 @@ awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(
 builder.Services.AddDefaultAWSOptions(awsOptions);
 builder.Services.AddAWSService<IAmazonS3>();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -44,6 +50,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowReactApp");
+
+app.UseExceptionHandler();
 
 app.MapControllers(); 
 
