@@ -28,7 +28,7 @@ namespace EasyFile.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetUsers), new { id = user.UserId }, user);
+            return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
         }
     }
 }

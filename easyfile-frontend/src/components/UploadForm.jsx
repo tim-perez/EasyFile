@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { createDocument } from '../services/api';
+import { AuthContext } from '../context/AuthContext'; 
 
 export default function UploadForm({ onUploadSuccess }) {
   const [orderId, setOrderId] = useState('');
@@ -8,39 +9,38 @@ export default function UploadForm({ onUploadSuccess }) {
   const [tags, setTags] = useState('');
   const [file, setFile] = useState(null);
 
+  // Extract the JWT token from the AuthContext
+  const { token } = useContext(AuthContext);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const documentData = {
-      orderId: parseInt(orderId),
-      title: title,
-      fileType: fileType,
-      tags: tags,
-      uploaderId: 1, 
-      fileUrl: `local/storage/${title}`
-    };
-
     // Package data into FormData for multipart/form-data transmission
     const formData = new FormData();
-    formData.append('orderId', documentData.orderId);
-    formData.append('title', documentData.title);
-    formData.append('fileType', documentData.fileType);
-    formData.append('tags', documentData.tags);
-    formData.append('uploaderId', 1);
-    formData.append('file', file);
+    formData.append('OrderId', orderId);
+    formData.append('Title', title);
+    formData.append('FileType', fileType);
+    formData.append('Tags', tags);
+    
+    // The C# backend will extract the User ID from the JWT token, 
+    // and generate the S3 fileUrl itself, so we no longer send those.
+    formData.append('File', file);
 
     try {
-      await createDocument(formData);
-      alert('File successfully uploaded to local storage!');
+      // Pass the token to the API service
+      await createDocument(formData, token);
+      
+      alert('File successfully uploaded to AWS S3! ☁️');
+      
       setTitle('');
       setTags('');
       setOrderId('');
       setFile(null);
-      // Reset the file input visually
       document.getElementById('fileInput').value = '';
       if (onUploadSuccess) onUploadSuccess();
     } catch (error) {
       console.error('Error uploading:', error);
+      alert('Upload failed. Check console for details.');
     }
   };
 
