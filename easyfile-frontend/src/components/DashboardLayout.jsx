@@ -1,20 +1,18 @@
-import ActionWidget from './widgets/ActionWidget';
-import AnalyticsWidget from './widgets/AnalyticsWidget';
-import InformationWidgets from './widgets/InformationWidgets';
+import { Link, Outlet } from 'react-router-dom';
 
 export default function DashboardLayout() {
   return (
     <div className="flex h-screen bg-[#282828] text-white font-sans overflow-hidden">
       
       {/* Sidebar */}
-      <aside className="w-64 shrink-0 border-r border-gray-700 flex flex-col">
+      <aside className="w-64 flex-shrink-0 border-r border-gray-700 flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-700">
           <span className="text-xl font-bold text-red-500 tracking-wider">▶ EasyFile</span>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
-          <a href="#" className="block px-4 py-2 rounded bg-gray-700 text-white font-medium">Dashboard</a>
-          <a href="#" className="block px-4 py-2 rounded text-gray-400 hover:bg-gray-800 hover:text-white transition">Orders</a>
-          <a href="#" className="block px-4 py-2 rounded text-gray-400 hover:bg-gray-800 hover:text-white transition">Cases</a>
+          <Link to="/" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Dashboard</Link>
+          <Link to="/orders" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Orders</Link>
+          <Link to="/cases" className="block px-4 py-2 rounded text-gray-400 hover:bg-gray-800 hover:text-white transition focus:bg-gray-700 focus:text-white">Cases</Link>
         </nav>
       </aside>
 
@@ -42,16 +40,8 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        {/* Dashboard Content Space */}
-        <main className="flex-1 p-8 overflow-y-auto bg-[#1f1f1f]">
-          <h1 className="text-2xl font-bold mb-6">EasyFile Dashboard</h1>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <ActionWidget />
-            <AnalyticsWidget />
-            <InformationWidgets />
-          </div>
-        </main>
+        {/* Dynamic Content Space */}
+        <Outlet />
         
       </div>
     </div>

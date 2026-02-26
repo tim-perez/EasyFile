@@ -1,8 +1,18 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
+import Dashboard from './components/Dashboard';
+import Orders from './components/Orders';
 
 function App() {
   return (
-    <DashboardLayout />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="orders" element={<Orders />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
