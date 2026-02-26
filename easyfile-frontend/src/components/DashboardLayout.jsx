@@ -5,7 +5,7 @@ export default function DashboardLayout() {
     <div className="flex h-screen bg-[#282828] text-white font-sans overflow-hidden">
       
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r border-gray-700 flex flex-col">
+      <aside className="w-64 shrink-0 border-r border-gray-700 flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-700">
           <span className="text-xl font-bold text-red-500 tracking-wider">▶ EasyFile</span>
         </div>
