@@ -8,7 +8,7 @@ using EasyFile.Api.Interfaces;
 using EasyFile.Data;
 using EasyFile.Models;
 
-namespace EasyFile.Api.Controllers
+namespace EasyFile.Controllers
 {
     [Authorize]
     [ApiController]
