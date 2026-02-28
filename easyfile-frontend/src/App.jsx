@@ -1,20 +1,51 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthProvider } from './context/AuthProvider';
+import { AuthContext } from './context/AuthContext';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './components/Dashboard';
 import Orders from './components/Orders';
 import Cases from './components/Cases';
+import Login from './components/Login';
+import Register from './components/Register';
+
+// ProtectedRoute component to guard routes that require authentication
+function ProtectedRoute({ children }) {
+  const { token } = useContext(AuthContext);
+
+  // if no token exists, redirect to login page
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children
+}
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<DashboardLayout />}>
+    <AuthProvider>
+      <BrowserRouter>
+       <Routes>
+        { /* Public Routes */ }
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        { /* Protected Routes */ }
+        <Route 
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="orders" element={<Orders />} />
           <Route path="cases" element={<Cases />} />
         </Route>
-      </Routes>
-    </BrowserRouter>
+       </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
