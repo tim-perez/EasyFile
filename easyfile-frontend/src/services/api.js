@@ -1,31 +1,33 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import axios from 'axios';
 
-export const getOrders = async () => {
-  const response = await fetch(`${API_BASE_URL}/orders`);
-  if (!response.ok) throw new Error('Failed to fetch orders');
-  return response.json();
-};
-
-export const loginUser = async (credentials) => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials)
-  });
-  if (!response.ok) throw new Error('Invalid credentials');
-  return response.json();
-};
-
-export const createDocument = async (formData, token) => {
-  const response = await fetch(`${API_BASE_URL}/documents`, {
-    method: 'POST',
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:7190/api',
     headers: {
-      'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
+    }
+});
+
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('jwtToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
     },
-    // Do NOT manually set 'Content-Type' headers when sending FormData.
-    // The browser handles the multipart boundary automatically. 
-    body: formData
-  });
-  if (!response.ok) throw new Error('Failed to upload document');
-  return response.json();
-};
+    (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('userRole');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default api;

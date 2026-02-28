@@ -1,52 +1,34 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
-import { AuthContext } from './context/AuthContext';
-import DashboardLayout from './components/DashboardLayout';
-import Dashboard from './components/Dashboard';
-import Orders from './components/Orders';
-import Cases from './components/Cases';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './components/Login';
 import Register from './components/Register';
-
-// ProtectedRoute component to guard routes that require authentication
-function ProtectedRoute({ children }) {
-  const { token } = useContext(AuthContext);
-
-  // if no token exists, redirect to login page
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children
-}
+import DashboardLayout from './components/DashboardLayout';
+import Dashboard from './components/Dashboard';
 
 function App() {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-       <Routes>
-        { /* Public Routes */ }
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    return (
+        <AuthProvider>
+            <Router>
+                <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={['Customer', 'Employee', 'Vendor']} />}>
+                        <Route path="/" element={<DashboardLayout />}>
+                            <Route index element={<Navigate to="/dashboard" replace />} />
+                            <Route path="dashboard" element={<Dashboard />} />
+                        </Route>
+                    </Route>
 
-        { /* Protected Routes */ }
-        <Route 
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="cases" element={<Cases />} />
-        </Route>
-       </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  );
+                    {/* Fallback Route */}
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </Router>
+        </AuthProvider>
+    );
 }
 
 export default App;

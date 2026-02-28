@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using EasyFile.Models;
 
-namespace EasyFile.Data // Changed from EasyFile.Api.Data
+namespace EasyFile.Data 
 {
-    public class AppDbContext : DbContext // Changed from ApplicationDbContext
+    public class AppDbContext : DbContext 
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) 
             : base(options)
