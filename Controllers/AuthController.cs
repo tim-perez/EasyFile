@@ -8,7 +8,7 @@ using EasyFile.Api.Models;
 using EasyFile.Models;     
 using EasyFile.Data;       
 
-namespace EasyFile.Api.Controllers
+namespace EasyFile.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

@@ -1,28 +1,71 @@
-using Microsoft.AspNetCore.Mvc;
-using EasyFile.Models;
-using EasyFile.Interfaces;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System;
+using EasyFile.Api.Interfaces;
+using EasyFile.Data;
+using EasyFile.Models;
 
-namespace EasyFile.Controllers
+namespace EasyFile.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
-    [Authorize] // 🔒 Locks this controller so only requests with a valid JWT pass through
+    [Route("api/[controller]")]
     public class DocumentsController : ControllerBase
     {
         private readonly IDocumentService _documentService;
+        private readonly AppDbContext _dbContext;
 
-        public DocumentsController(IDocumentService documentService)
+        public DocumentsController(IDocumentService documentService, AppDbContext dbContext)
         {
             _documentService = documentService;
+            _dbContext = dbContext;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UploadDocument([FromForm] DocumentUploadDto uploadDto)
+        [HttpPost("upload/{orderId}")]
+        public async Task<IActionResult> UploadDocument(int orderId, [FromForm] IFormFile file)
         {
-            var s3Url = await _documentService.UploadDocumentAsync(uploadDto);
-            return Ok(new { Message = "File uploaded to AWS S3 successfully", Path = s3Url });
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file was provided." });
+            }
+
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
+
+            try
+            {
+                var fileKey = await _documentService.UploadDocumentAsync(file, userIdString);
+
+                var document = new Document
+                {
+                    OrderId = orderId,
+                    Title = file.FileName,
+                    FileType = file.ContentType,
+                    FileUrl = fileKey,
+                    UploaderId = uploaderId,
+                    CreatedAt = DateTime.UtcNow,
+                    Tags = "" // Provide default or accept from request
+                };
+
+                _dbContext.Documents.Add(document);
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { 
+                    message = "File uploaded successfully.", 
+                    documentId = document.Id,
+                    fileUrl = document.FileUrl 
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while uploading the file.", error = ex.Message });
+            }
         }
     }
 }

@@ -1,36 +1,48 @@
-using EasyFile.Data;
-using EasyFile.Models;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using EasyFile.Data;
 
 namespace EasyFile.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
+    [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public OrdersController(AppDbContext context)
+        private readonly AppDbContext _dbContext;
+
+        public OrdersController(AppDbContext dbContext)
         {
-            _context = context;
+            _dbContext = dbContext;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+        [HttpGet("my-orders")]
+        public async Task<IActionResult> GetMyOrders()
         {
-            return await _context.Orders
-                .Include(o => o.Documents)
-                .ToListAsync();
-        }
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdString, out int userId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
 
-        [HttpPost]
-        public async Task<ActionResult<Order>> CreateOrder(Order order)
-        {
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-            return CreatedAtAction(nameof(GetOrders), new { id = order.OrderId }, order);
+            if (userRole == "Customer")
+            {
+                // TODO: Fetch orders placed by this specific customer
+                // var orders = await _dbContext.Orders.Where(o => o.CustomerId == userId).ToListAsync();
+                return Ok(new { message = "Customer orders retrieved.", userId, role = userRole });
+            }
+            else if (userRole == "Employee" || userRole == "Vendor")
+            {
+                // TODO: Fetch orders pending review or assigned to this employee/vendor
+                // var orders = await _dbContext.Orders.Where(o => o.Status == "PendingReview").ToListAsync();
+                return Ok(new { message = "Reviewable orders retrieved.", userId, role = userRole });
+            }
+
+            return Forbid();
         }
     }
 }

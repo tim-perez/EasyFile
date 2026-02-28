@@ -1,55 +1,50 @@
 using Amazon.S3;
-using Amazon.S3.Transfer;
-using EasyFile.Interfaces;
-using EasyFile.Models;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.IO;
-using System.Threading.Tasks;
+using Amazon.S3.Model;
+using Microsoft.AspNetCore.Http;
+using EasyFile.Api.Interfaces;
 
-namespace EasyFile.Services
+namespace EasyFile.Api.Services
 {
     public class DocumentService : IDocumentService
     {
-        private readonly IDocumentRepository _repository;
         private readonly IAmazonS3 _s3Client;
-        private readonly string _bucketName;
+        private const string BucketName = "easyfile-documents-bucket"; // Store in appsettings.json in production
 
-        public DocumentService(IDocumentRepository repository, IAmazonS3 s3Client, IConfiguration configuration)
+        public DocumentService(IAmazonS3 s3Client)
         {
-            _repository = repository;
             _s3Client = s3Client;
-            _bucketName = configuration["AWS:BucketName"] ?? throw new ArgumentNullException("AWS BucketName configuration is missing.");
         }
 
-        public async Task<string> UploadDocumentAsync(DocumentUploadDto uploadDto)
+        public async Task<string> UploadDocumentAsync(IFormFile file, string userId)
         {
-            if (uploadDto.File == null || uploadDto.File.Length == 0)
-                throw new ArgumentException("No file uploaded.");
+            var fileKey = $"uploads/{userId}/{Guid.NewGuid()}_{file.FileName}";
 
-            var fileKey = $"{Guid.NewGuid()}_{uploadDto.File.FileName}";
-            var s3Url = $"https://{_bucketName}.s3.amazonaws.com/{fileKey}";
+            using var newMemoryStream = new MemoryStream();
+            await file.CopyToAsync(newMemoryStream);
 
-            using (var newMemoryStream = new MemoryStream())
+            var uploadRequest = new PutObjectRequest
             {
-                await uploadDto.File.CopyToAsync(newMemoryStream);
-                newMemoryStream.Position = 0;
+                InputStream = newMemoryStream,
+                Key = fileKey,
+                BucketName = BucketName,
+                ContentType = file.ContentType
+            };
 
-                var uploadRequest = new TransferUtilityUploadRequest
-                {
-                    InputStream = newMemoryStream,
-                    Key = fileKey,
-                    BucketName = _bucketName,
-                    ContentType = uploadDto.File.ContentType
-                };
+            await _s3Client.PutObjectAsync(uploadRequest);
 
-                var fileTransferUtility = new TransferUtility(_s3Client);
-                await fileTransferUtility.UploadAsync(uploadRequest);
-            }
+            return fileKey;
+        }
 
-            await _repository.SaveDocumentMetadataAsync(uploadDto, s3Url);
+        public async Task<string> GetDocumentPresignedUrlAsync(string fileKey)
+        {
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = BucketName,
+                Key = fileKey,
+                Expires = DateTime.UtcNow.AddMinutes(30)
+            };
 
-            return s3Url;
+            return await _s3Client.GetPreSignedURLAsync(request);
         }
     }
 }
