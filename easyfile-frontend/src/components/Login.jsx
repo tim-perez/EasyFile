@@ -1,15 +1,18 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
   });
+  const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
 
   const { login } = useContext(AuthContext);
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCredentials(prevState => ({
@@ -21,10 +24,11 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(credentials); // Call the login function from AuthContext with the credentials
+      await login(credentials.email, credentials.password); 
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      // Optionally, you can set an error state here to display an error message to the user
+      setStatusMessage({ type: 'error', text: 'Login failed. Please check your credentials.' });
     }
   };
 
@@ -42,7 +46,11 @@ export default function Login() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-[#282828] py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            
+            {statusMessage.text && (
+              <div className={`text-sm ${statusMessage.type === 'error' ? 'text-red-400' : 'text-green-400'}`}>
+                {statusMessage.text}
+              </div>
+            )}
             <div className="mb-4">
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
               <input

@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 export default function Register() {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     accountType: 'Customer',
     firstName: '',
@@ -14,6 +17,10 @@ export default function Register() {
     secretPassword: ''
   });
 
+  // New state to handle UI feedback
+  const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -24,8 +31,44 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // API registration request logic will go here
-    console.log("Registration data submitted:", formData);
+    setStatusMessage({ type: '', text: '' });
+    
+    // 1. Frontend Validation
+    if (formData.password !== formData.confirmPassword) {
+      setStatusMessage({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 2. API Call to C# Backend
+      await api.post('/auth/register', {
+        accountType: formData.accountType,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        businessName: formData.businessName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        secretPassword: formData.secretPassword
+      });
+
+      // 3. Success Handling
+      setStatusMessage({ type: 'success', text: 'Account successfully registered! Redirecting to login...' });
+      
+      // Delay the redirect so the user can read the success message
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+
+    } catch (error) {
+      // 4. Error Handling (e.g., Email already exists, wrong secret code)
+      const errorMsg = error.response?.data?.message || 'An error occurred during registration. Please try again.';
+      setStatusMessage({ type: 'error', text: errorMsg });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -41,6 +84,14 @@ export default function Register() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="bg-[#282828] py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-700">
+          
+          {/* Conditional rendering for status messages */}
+          {statusMessage.text && (
+            <div className={`p-4 mb-6 rounded text-sm ${statusMessage.type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-800' : 'bg-green-900/50 text-green-200 border border-green-800'}`}>
+              {statusMessage.text}
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             
             <div>
@@ -171,9 +222,10 @@ export default function Register() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition mt-4"
+                disabled={isSubmitting}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition mt-4 disabled:opacity-50"
               >
-                Register
+                {isSubmitting ? 'Registering...' : 'Register'}
               </button>
             </div>
             

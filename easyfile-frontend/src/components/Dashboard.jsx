@@ -1,18 +1,34 @@
-import ActionWidget from './widgets/ActionWidget';
-import AnalyticsWidget from './widgets/AnalyticsWidget';
-import InformationWidgets from './widgets/InformationWidgets';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import CustomerPortal from './CustomerPortal';
+import EmployeePortal from './EmployeePortal';
+import VendorPortal from './VendorPortal';
 
 export default function Dashboard() {
-  return (
-    <main className="flex-1 p-8 overflow-y-auto bg-[#1f1f1f]">
-      <h1 className="text-2xl font-bold mb-6">EasyFile Dashboard</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <ActionWidget />
-        <AnalyticsWidget />
-        <InformationWidgets />
-      </div>
-    </main>
-  );
+    const { user } = useContext(AuthContext);
+    const role = user?.role; // Safely access role with optional chaining
+
+    console.log('User role from context:', role); // Debugging line to check the role value
+
+    // Conditional Routing based on RBAC
+    if (role === 'Customer') {
+        return <CustomerPortal />;
+    } 
+
+    if (role === 'Employee') {
+        return <EmployeePortal />;
+    }
+    
+    if (role === 'Vendor') {
+        return <VendorPortal />;
+    }
+
+    // Fallback if role is unrecognized or missing
+    return (
+        <div className="flex justify-center items-center h-screen text-white bg-[#1f1f1f]">
+            <p>Error: Unauthorized role or missing access level.</p>
+        </div>
+    );
 }
 
 

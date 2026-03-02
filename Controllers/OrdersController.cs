@@ -1,4 +1,3 @@
-// Controllers/OrdersController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +34,7 @@ namespace EasyFile.Controllers
             var newOrder = new Order
             {
                 UserId = customerId,
-                Category = request.Category!, // DTO validation ensures this is not null
+                Category = request.Category!, 
                 Summary = request.Summary ?? "",
                 Status = "PendingReview",
                 CreatedAt = DateTime.UtcNow
