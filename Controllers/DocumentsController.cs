@@ -44,13 +44,9 @@ namespace EasyFile.Controllers
 
                 var document = new Document
                 {
-                    OrderId = orderId,
-                    Title = file.FileName,
                     FileType = file.ContentType,
                     FileUrl = fileKey,
                     UploaderId = uploaderId,
-                    CreatedAt = DateTime.UtcNow,
-                    Tags = "" // Provide default or accept from request
                 };
 
                 _dbContext.Documents.Add(document);

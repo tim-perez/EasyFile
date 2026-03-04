@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.InteropServices;
 
 namespace EasyFile.Models
 {
@@ -37,6 +38,12 @@ namespace EasyFile.Models
         public required string PasswordHash { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [InverseProperty("Uploader")]
+        public ICollection<Document> UploadedDocuments { get; set; } = new List<Document>();
+
+        [InverseProperty("Reviewer")]
+        public ICollection<Document> ReviewedDocuments { get; set; } = new List<Document>();
     }
 }
 

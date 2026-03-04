@@ -33,6 +33,9 @@ namespace EasyFile.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Feedback")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -41,14 +44,20 @@ namespace EasyFile.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
+                    b.Property<bool>("Recycled")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("Tags")
+                    b.Property<string>("ReportUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Title")
+                    b.Property<int?>("ReviewerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StarRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -57,42 +66,11 @@ namespace EasyFile.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("UploaderId");
 
                     b.ToTable("Documents");
-                });
-
-            modelBuilder.Entity("EasyFile.Models.Order", b =>
-                {
-                    b.Property<int>("OrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Summary")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("OrderId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("EasyFile.Models.User", b =>
@@ -148,29 +126,26 @@ namespace EasyFile.Migrations
 
             modelBuilder.Entity("EasyFile.Models.Document", b =>
                 {
-                    b.HasOne("EasyFile.Models.Order", "Order")
-                        .WithMany("Documents")
-                        .HasForeignKey("OrderId")
+                    b.HasOne("EasyFile.Models.User", "Reviewer")
+                        .WithMany("ReviewedDocuments")
+                        .HasForeignKey("ReviewerId");
+
+                    b.HasOne("EasyFile.Models.User", "Uploader")
+                        .WithMany("UploadedDocuments")
+                        .HasForeignKey("UploaderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Order");
+                    b.Navigation("Reviewer");
+
+                    b.Navigation("Uploader");
                 });
 
-            modelBuilder.Entity("EasyFile.Models.Order", b =>
+            modelBuilder.Entity("EasyFile.Models.User", b =>
                 {
-                    b.HasOne("EasyFile.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ReviewedDocuments");
 
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EasyFile.Models.Order", b =>
-                {
-                    b.Navigation("Documents");
+                    b.Navigation("UploadedDocuments");
                 });
 #pragma warning restore 612, 618
         }

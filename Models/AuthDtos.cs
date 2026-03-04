@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EasyFile.Api.Models
+namespace EasyFile.Models
 {
     public class LoginDto
     {
