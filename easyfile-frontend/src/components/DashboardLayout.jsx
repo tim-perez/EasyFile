@@ -11,8 +11,7 @@ export default function DashboardLayout() {
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           <Link to="/" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Dashboard</Link>
-          <Link to="/orders" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Orders</Link>
-          <Link to="/cases" className="block px-4 py-2 rounded text-gray-400 hover:bg-gray-800 hover:text-white transition focus:bg-gray-700 focus:text-white">Cases</Link>
+          <Link to="/documents" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Documents</Link>
         </nav>
       </aside>
 

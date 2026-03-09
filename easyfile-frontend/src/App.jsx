@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './components/Dashboard';
+import Documents from './components/Documents';
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                         <Route path="/" element={<DashboardLayout />}>
                             <Route index element={<Navigate to="/dashboard" replace />} />
                             <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="documents" element={<Documents />} />
                         </Route>
                     </Route>
 

@@ -77,7 +77,6 @@ namespace EasyFile.Controllers
                 message = "Login successful."
             });
         }
-
         private string GenerateJwtToken(User user)
         {
             var secretKey = _configuration["JwtSettings:SecretKey"] 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System;
@@ -24,8 +25,8 @@ namespace EasyFile.Controllers
             _dbContext = dbContext;
         }
 
-        [HttpPost("upload/{orderId}")]
-        public async Task<IActionResult> UploadDocument(int orderId, [FromForm] IFormFile file)
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
@@ -62,6 +63,22 @@ namespace EasyFile.Controllers
             {
                 return StatusCode(500, new { message = "An error occurred while uploading the file.", error = ex.Message });
             }
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetDocuments()
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
+
+            var documents = await _dbContext.Documents
+                .Where(d => d.UploaderId == uploaderId && !d.Recycled)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return Ok(documents);
         }
     }
 }
