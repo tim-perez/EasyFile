@@ -3,6 +3,7 @@ import UploadDocumentModal from './UploadDocumentModal';
 
 export default function Documents() {
   const [documents, setDocuments] = useState([]);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -19,6 +20,8 @@ export default function Documents() {
 
     fetchDocuments();
   }, []);
+
+
 
   return (
     <div className="p-8 text-white w-full h-full overflow-y-auto">
@@ -44,7 +47,7 @@ export default function Documents() {
               <th className="p-4 font-medium">Reviewer</th>
               <th className="p-4 font-medium">Date</th>
               <th className="p-4 font-medium">Report</th>
-              <th className="p-4 font-medium">Leave a Review</th>
+              <th className="p-4 font-medium">Review</th>
             </tr>
           </thead>
           
@@ -79,7 +82,7 @@ export default function Documents() {
                   </td>
                   <td className="p-4"><a href="#" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">View</a></td>
                   <td className="p-4">
-                    <button className="text-blue-400 hover:underline">
+                    <button className="text-blue-400 hover:underline" onClick={() => setIsReviewModalOpen(true)}>
                       Leave a Review
                     </button>
                   </td>
@@ -92,6 +95,9 @@ export default function Documents() {
       
       {/* Keeping your modal here so it can be triggered */}
       <UploadDocumentModal />
+      {isReviewModalOpen && (
+        <ReviewModal onClose={() => setIsReviewModalOpen(false)} />
+      )}
     </div>
   );
 }
