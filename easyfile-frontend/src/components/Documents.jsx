@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
 import UploadDocumentModal from './UploadDocumentModal';
+import ReviewModal from './ReviewModal';
 
 export default function Documents() {
   const [documents, setDocuments] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState([]);
+
+  const toggleSelection = (id) => {
+    if (selectedDocument.includes(id)) {
+      setSelectedDocument(selectedDocument.filter(existingId => existingId !== id));
+    } else {
+      setSelectedDocument([...selectedDocument, id]);
+    }
+  };
+
+  const handleDelete = () => {
+    const remainingDocuments = documents.filter((doc) => !selectedDocument.includes(doc.id));
+    setDocuments(remainingDocuments);
+    setSelectedDocument([]);
+  }
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -36,11 +52,18 @@ export default function Documents() {
 
       {/* The Data Table */}
       <div className="w-full border border-gray-700 rounded-md overflow-hidden">
+        <div className="mb-4">
+          {selectedDocument.length > 0 && (
+            <button className="text-red-500 hover:text-red-400 flex items-center gap-2" onClick={handleDelete}>
+              🗑️ Delete Selected
+            </button>
+          )}
+        </div>
         <table className="w-full text-left text-sm text-gray-300">
           <thead className="border-b border-gray-700 bg-[#1f1f1f]">
             <tr>
               <th className="p-4 w-12">
-                <input type="checkbox" className="rounded bg-gray-800 border-gray-600" />
+                <input type="checkbox" className="rounded bg-gray-800 border-gray-600" onClick={toggleSelection} />
               </th>
               <th className="p-4 font-medium">Document</th>
               <th className="p-4 font-medium">Status</th>
@@ -72,7 +95,7 @@ export default function Documents() {
             ) : (
               documents.map((doc) => (
                 <tr key={doc.id} className="border-b border-gray-700 hover:bg-[#2a2a2a]">
-                  <td className="p-4"><input type="checkbox" className="rounded bg-gray-800 border-gray-600" /></td>
+                  <td className="p-4"><input type="checkbox" className="rounded bg-gray-800 border-gray-600" onClick={() => toggleSelection(doc.id)} /></td>
                   <td className="p-4">{doc.name}</td>
                   <td className="p-4">{doc.status}</td>
                   <td className="p-4">{doc.reviewer}</td>
@@ -98,6 +121,7 @@ export default function Documents() {
       {isReviewModalOpen && (
         <ReviewModal onClose={() => setIsReviewModalOpen(false)} />
       )}
+
     </div>
   );
 }
