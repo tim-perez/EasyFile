@@ -80,5 +80,96 @@ namespace EasyFile.Controllers
 
             return Ok(documents);
         }
+        [HttpDelete("recycle")]
+        public async Task<IActionResult> RecycleDocuments([FromBody] List<int> documentIds)
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
+
+            var documents = await _dbContext.Documents
+                .Where(d => documentIds.Contains(d.Id) && d.UploaderId == uploaderId)
+                .ToListAsync();
+
+            
+            foreach (var doc in documents)
+            {
+                doc.Recycled = true;
+                doc.DeletedAt = DateTime.UtcNow;
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Documents successfully moved to trash." });
+        }
+
+        [HttpGet("recycle")]
+        public async Task<IActionResult> GetRecycledDocuments()
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
+
+            // [Your database query goes here]
+            var documents = await _dbContext.Documents
+                .Where(d => d.UploaderId == uploaderId && d.Recycled)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return Ok(documents);
+        }
+
+        [HttpPost("restore")]
+        public async Task<IActionResult> RestoreDocuments([FromBody] List<int> documentIds)
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
+
+            var documents = await _dbContext.Documents
+                .Where(d => documentIds.Contains(d.Id) && d.UploaderId == uploaderId)
+                .ToListAsync();
+
+            foreach (var doc in documents)
+            {
+                doc.Recycled = false;
+                doc.DeletedAt = null;
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Documents successfully restored." });
+        }
+
+        [HttpDelete("permanent-delete")]
+        public async Task<IActionResult> PermanentDeleteDocuments([FromBody] List<int> documentIds)
+        {
+            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            {
+                return Unauthorized(new { message = "Invalid user token." });
+            }
+
+            var documents = await _dbContext.Documents
+                .Where(d => documentIds.Contains(d.Id) && d.UploaderId == uploaderId)
+                .ToListAsync();
+
+            // [Your deletion logic goes here]
+            foreach (var doc in documents)
+            {
+                await _documentService.DeleteDocumentAsync(doc.FileUrl);
+            }
+            _dbContext.Documents.RemoveRange(documents);
+        
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Documents permanently deleted." });
+        }
     }
 }

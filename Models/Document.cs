@@ -18,6 +18,7 @@ public class Document
     public int? StarRating { get; set; }
     public string? Feedback { get; set; }
     public bool Recycled { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 
     // Foreign keys
     public int UploaderId { get; set; }

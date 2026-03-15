@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import UploadDocumentModal from './UploadDocumentModal';
 import ReviewModal from './ReviewModal';
 
-export default function Documents() {
+export default function RecycleBin() {
   const [documents, setDocuments] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState([]);
@@ -15,9 +14,45 @@ export default function Documents() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleRestore = async () => {
     try {
-      const response = await fetch('/api/documents/recycle', {
+
+      const isConfirmed = window.confirm('Are you sure you want to restore the selected documents?');
+
+      if (!isConfirmed) {
+        return;
+      }
+
+      const response = await fetch('/api/documents/restore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedDocument),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to restore documents');
+      }
+
+      const remainingDocuments = documents.filter((doc) => !selectedDocument.includes(doc.id));
+      setDocuments(remainingDocuments);
+      setSelectedDocument([]);
+
+    } catch (error) {
+      console.error('Error restoring documents:', error);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    try {
+      const isConfirmed = window.confirm('Are you sure you want to permanently delete the selected documents? This action cannot be undone.');
+      
+      if (!isConfirmed) {
+        return;
+      }
+
+      const response = await fetch('/api/documents/permanent-delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -26,28 +61,27 @@ export default function Documents() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to recycle documents');
+        throw new Error('Failed to permanently delete documents');
       }
-
+      
       const remainingDocuments = documents.filter((doc) => !selectedDocument.includes(doc.id));
       setDocuments(remainingDocuments);
       setSelectedDocument([]);
-
     } catch (error) {
-      console.error('Error recycling documents:', error);
+      console.error('Error permanently deleting documents:', error);
     }
   };
 
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await fetch('/api/documents');
+        const response = await fetch('/api/documents/recycle');
         if (response.ok) {
           const data = await response.json();
           setDocuments(data);
         }
       } catch (error) {
-        console.error("Error fetching documents:", error);
+        console.error("Error fetching recycled documents:", error);
       }
     };
 
@@ -59,7 +93,7 @@ export default function Documents() {
   return (
     <div className="p-8 text-white w-full h-full overflow-y-auto">
       {/* 1. Title */}
-      <h1 className="text-2xl font-bold mb-6">Account Documents</h1>
+      <h1 className="text-2xl font-bold mb-6">Recycle Bin</h1>
 
       {/* 3. Filter Placeholder & 4. Trash Can Placeholder */}
       <div className="flex items-center space-x-4 mb-4 text-gray-400 border-b border-gray-700 pb-2">
@@ -71,9 +105,14 @@ export default function Documents() {
       <div className="w-full border border-gray-700 rounded-md overflow-hidden">
         <div className="mb-4">
           {selectedDocument.length > 0 && (
-            <button className="text-red-500 hover:text-red-400 flex items-center gap-2" onClick={handleDelete}>
-              🗑️ Delete Selected
+            <>
+            <button className="text-green-500 hover:text-green-400 flex items-center gap-2" onClick={handleRestore}>
+              Restore
             </button>
+            <button className="text-red-500 hover:text-red-400 flex items-center gap-2" onClick={handlePermanentDelete}>
+              Delete Permanently
+            </button>
+            </>
           )}
         </div>
         <table className="w-full text-left text-sm text-gray-300">
@@ -96,16 +135,13 @@ export default function Documents() {
               <tr>
                 <td colSpan="7" className="p-12">
                   <div className="flex flex-col items-center justify-center text-gray-500 space-y-4">
-                    {/* 1. Placeholder Image */}
-                    <div className="w-32 h-32 bg-gray-700 rounded-md flex items-center justify-center">
-                      <span className="text-4xl">📄</span> {/* Replace with your actual image later */}
+                    {/* Placeholder Image */}
+                    <div className="w-32 h-32 flex items-center justify-center">
+                      <span className="text-6xl">🗑️</span> 
                     </div>
                     
-                    {/* 2. Empty Text */}
-                    <p>No documents available</p>
-                    
-                    {/* 3. Upload Button (via Modal Component) */}
-                    <UploadDocumentModal />
+                    {/* Empty Text */}
+                    <p className="text-lg">Recycle bin is empty</p>
                   </div>
                 </td>
               </tr>
@@ -117,8 +153,8 @@ export default function Documents() {
                   <td className="p-4">{doc.status}</td>
                   <td className="p-4">{doc.reviewer}</td>
                   <td className="p-4">
-                    <div>{doc.date}</div>
-                    <div className="text-xs text-gray-500 mt-1">Uploaded</div>
+                    <div>{doc.deletedAt?.toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500 mt-1">Deleted</div>
                   </td>
                   <td className="p-4"><a href="#" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">View</a></td>
                   <td className="p-4">
@@ -134,7 +170,6 @@ export default function Documents() {
       </div>
       
       {/* Keeping your modal here so it can be triggered */}
-      <UploadDocumentModal />
       {isReviewModalOpen && (
         <ReviewModal onClose={() => setIsReviewModalOpen(false)} />
       )}

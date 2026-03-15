@@ -7,5 +7,6 @@ namespace EasyFile.Api.Interfaces
     {
         Task<string> UploadDocumentAsync(IFormFile file, string userId);
         Task<string> GetDocumentPresignedUrlAsync(string fileKey);
+        Task DeleteDocumentAsync(string fileKey);
     }
 }

@@ -46,5 +46,16 @@ namespace EasyFile.Api.Services
 
             return await _s3Client.GetPreSignedURLAsync(request);
         }
+
+        public async Task DeleteDocumentAsync(string fileKey)
+        {
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = BucketName,
+                Key = fileKey
+            };
+
+            await _s3Client.DeleteObjectAsync(deleteRequest);
+        }
     }
 }
