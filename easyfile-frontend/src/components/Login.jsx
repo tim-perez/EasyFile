@@ -11,7 +11,12 @@ export default function Login() {
   });
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
 
-  const { login } = useContext(AuthContext);
+  const { login, loginAsGuest } = useContext(AuthContext);
+
+  const handleGuestLogin = () => {
+    loginAsGuest();
+    navigate('/dashboard');
+  };
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -85,6 +90,15 @@ export default function Login() {
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
               >
                 Login
+              </button>
+            </div>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleGuestLogin}
+                className="w-full flex justify-center py-2 px-4 border border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-[#3a3a3a] hover:bg-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition"
+              >
+                Continue as Guest
               </button>
             </div>
           </form>

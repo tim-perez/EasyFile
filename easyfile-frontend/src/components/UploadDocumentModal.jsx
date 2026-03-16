@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import { useState, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+
 
 export default function UploadDocumentModal() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
@@ -11,24 +17,30 @@ export default function UploadDocumentModal() {
   const handleUpload = async () => {
     if (!selectedFile) return;
 
+    if (user && user.isGuest === true) {
+      const currentCount = parseInt(localStorage.getItem('guestDocCount'), 10);
+      
+      if (currentCount >= 5) {
+        window.alert("You have reached the 5 document limit for guests. Please register for an account to upload more!");
+        navigate('/register');
+        return;
+      }
+    }
+
     const formData = new FormData();
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch('/api/documents/upload', {
-        method: 'POST',
-        // Note: The browser automatically sets the correct 'multipart/form-data' boundary 
-        // when you pass a FormData object directly to the body.
-        body: formData,
-        headers: {
-          // 'Authorization': `Bearer ${userToken}` // Uncomment if using JWTs
-        }
-      });
+      const response = await fetch('/api/documents/upload', { /* ... */ });
       
       if (response.ok) {
         setIsModalOpen(false);
         setSelectedFile(null);
-        // Next: Trigger a refresh of the document list
+        
+        if (user && user.isGuest === true) {
+           const currentCount = parseInt(localStorage.getItem('guestDocCount'), 10);
+           localStorage.setItem('guestDocCount', (currentCount + 1).toString());
+        }
       }
     } catch (error) {
       console.error("Upload failed", error);
