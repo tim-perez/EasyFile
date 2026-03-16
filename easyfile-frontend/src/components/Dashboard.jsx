@@ -1,8 +1,7 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import CustomerPortal from './CustomerPortal';
-import EmployeePortal from './EmployeePortal';
-import VendorPortal from './VendorPortal';
+import CustomerPortal from './UserPortal';
+import AdminPortal from './AdminPortal';
 
 export default function Dashboard() {
     const { user } = useContext(AuthContext);
@@ -15,12 +14,8 @@ export default function Dashboard() {
         return <CustomerPortal />;
     } 
 
-    if (role === 'Employee') {
-        return <EmployeePortal />;
-    }
-    
-    if (role === 'Vendor') {
-        return <VendorPortal />;
+    if (role === 'Admin') {
+        return <AdminPortal />;
     }
 
     // Fallback if role is unrecognized or missing

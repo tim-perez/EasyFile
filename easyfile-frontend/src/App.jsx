@@ -6,6 +6,7 @@ import Register from './components/Register';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './components/Dashboard';
 import Documents from './components/Documents';
+import RecycleBin from './components/RecycleBin';
 
 function App() {
     return (
@@ -17,11 +18,12 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     
                     {/* Protected Routes */}
-                    <Route element={<ProtectedRoute allowedRoles={['Customer', 'Employee', 'Vendor']} />}>
+                    <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin']} />}>
                         <Route path="/" element={<DashboardLayout />}>
                             <Route index element={<Navigate to="/dashboard" replace />} />
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="documents" element={<Documents />} />
+                            <Route path="recycle-bin" element={<RecycleBin />} />
                         </Route>
                     </Route>
 
