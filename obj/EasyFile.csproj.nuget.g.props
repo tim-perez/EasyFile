@@ -22,7 +22,8 @@
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <PkgMicrosoft_Extensions_ApiDescription_Server Condition=" '$(PkgMicrosoft_Extensions_ApiDescription_Server)' == '' ">/Users/timperez/.nuget/packages/microsoft.extensions.apidescription.server/10.0.0</PkgMicrosoft_Extensions_ApiDescription_Server>
     <PkgMicrosoft_CodeAnalysis_Analyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_Analyzers)' == '' ">/Users/timperez/.nuget/packages/microsoft.codeanalysis.analyzers/3.11.0</PkgMicrosoft_CodeAnalysis_Analyzers>
-    <PkgAWSSDK_Core Condition=" '$(PkgAWSSDK_Core)' == '' ">/Users/timperez/.nuget/packages/awssdk.core/4.0.3.12</PkgAWSSDK_Core>
+    <PkgAWSSDK_Core Condition=" '$(PkgAWSSDK_Core)' == '' ">/Users/timperez/.nuget/packages/awssdk.core/4.0.3.17</PkgAWSSDK_Core>
+    <PkgAWSSDK_Textract Condition=" '$(PkgAWSSDK_Textract)' == '' ">/Users/timperez/.nuget/packages/awssdk.textract/4.0.3.16</PkgAWSSDK_Textract>
     <PkgAWSSDK_S3 Condition=" '$(PkgAWSSDK_S3)' == '' ">/Users/timperez/.nuget/packages/awssdk.s3/4.0.18.6</PkgAWSSDK_S3>
   </PropertyGroup>
 </Project>

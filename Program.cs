@@ -3,6 +3,9 @@ using EasyFile.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+// Add these two lines so Program.cs can find your services!
+using EasyFile.Interfaces; 
+using EasyFile.Services;   
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +46,11 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+// Register your custom services here!
+builder.Services.AddScoped<IAiReviewService, AiReviewService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>(); // Don't forget this one!
+builder.Services.AddScoped<ITextractService, TextractService>();
 
 var app = builder.Build();
 

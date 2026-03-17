@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import CustomerPortal from './UserPortal';
+import CustomerPortal from './CustomerPortal';
 import AdminPortal from './AdminPortal';
 
 export default function Dashboard() {

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System;
-using EasyFile.Api.Interfaces;
+using EasyFile.Interfaces;
 using EasyFile.Data;
 using EasyFile.Models;
 

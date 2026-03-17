@@ -52,6 +52,10 @@
               "target": "Package",
               "version": "[4.0.18.6, )"
             },
+            "AWSSDK.Textract": {
+              "target": "Package",
+              "version": "[4.0.3.16, )"
+            },
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.1.0, )"
@@ -73,6 +77,10 @@
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
               "version": "[10.0.3, )"
+            },
+            "OpenAI": {
+              "target": "Package",
+              "version": "[2.9.1, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",

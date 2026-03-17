@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
-namespace EasyFile.Api.Interfaces
+namespace EasyFile.Interfaces
 {
     public interface IDocumentService
     {
