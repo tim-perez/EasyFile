@@ -6,6 +6,7 @@ export default function Documents() {
   const [documents, setDocuments] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState([]);
+  const [viewingReport, setViewingReport] = useState(null);
 
   const toggleSelection = (id) => {
     if (selectedDocument.includes(id)) {
@@ -120,7 +121,18 @@ export default function Documents() {
                     <div>{doc.date}</div>
                     <div className="text-xs text-gray-500 mt-1">Uploaded</div>
                   </td>
-                  <td className="p-4"><a href="#" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">View</a></td>
+                  <td className="p-4">
+                    {doc.aiReport ? (
+                      <button 
+                        onClick={() => setViewingReport(doc.aiReport)}
+                        className="text-blue-400 hover:text-blue-300 font-medium underline transition"
+                      >
+                        View Report
+                      </button>
+                    ) : (
+                      <span className="text-gray-600 italic">No Report</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     <button className="text-blue-400 hover:underline" onClick={() => setIsReviewModalOpen(true)}>
                       Leave a Review
