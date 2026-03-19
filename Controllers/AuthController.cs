@@ -16,9 +16,7 @@ namespace EasyFile.Controllers
         private readonly AppDbContext _dbContext;
         private readonly IConfiguration _configuration;
 
-        private const string EmployeeSecret = "EMP-SECRET-2026"; 
-        private const string VendorSecret = "VND-SECRET-2026";
-
+        private const string AdminSecret = "ADMIN-SECRET-2026"; 
         public AuthController(AppDbContext dbContext, IConfiguration configuration)
         {
             _dbContext = dbContext;
@@ -28,14 +26,9 @@ namespace EasyFile.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto request)
         {
-            if (request.AccountType == "Employee" && request.SecretPassword != EmployeeSecret)
+            if (request.AccountType == "Admin" && request.SecretPassword != AdminSecret)
             {
-                return Unauthorized(new { message = "Invalid Employee authorization code." });
-            }
-            
-            if (request.AccountType == "Vendor" && request.SecretPassword != VendorSecret)
-            {
-                return Unauthorized(new { message = "Invalid Vendor authorization code." });
+                return Unauthorized(new { message = "Invalid Admin authorization code." });
             }
 
             var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
