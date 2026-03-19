@@ -6,6 +6,7 @@ using System.Text;
 // Add these two lines so Program.cs can find your services!
 using EasyFile.Interfaces; 
 using EasyFile.Services;   
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,9 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+// Tells the app how to build the IAmazonS3 client
+builder.Services.AddAWSService<IAmazonS3>();
 
 // Register your custom services here!
 builder.Services.AddScoped<IAiReviewService, AiReviewService>();

@@ -10,28 +10,30 @@
         "dependencies": {
           "AWSSDK.Extensions.NETCore.Setup": "4.0.3.22",
           "AWSSDK.S3": "4.0.18.6",
+          "AWSSDK.Textract": "4.0.3.16",
           "BCrypt.Net-Next": "4.1.0",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "10.0.3",
           "Microsoft.AspNetCore.OpenApi": "10.0.2",
           "Microsoft.EntityFrameworkCore.Design": "10.0.3",
           "Microsoft.EntityFrameworkCore.SqlServer": "10.0.3",
+          "OpenAI": "2.9.1",
           "Swashbuckle.AspNetCore": "10.1.4"
         },
         "runtime": {
           "EasyFile.dll": {}
         }
       },
-      "AWSSDK.Core/4.0.3.12": {
+      "AWSSDK.Core/4.0.3.17": {
         "runtime": {
           "lib/net8.0/AWSSDK.Core.dll": {
             "assemblyVersion": "4.0.0.0",
-            "fileVersion": "4.0.3.12"
+            "fileVersion": "4.0.3.17"
           }
         }
       },
       "AWSSDK.Extensions.NETCore.Setup/4.0.3.22": {
         "dependencies": {
-          "AWSSDK.Core": "4.0.3.12"
+          "AWSSDK.Core": "4.0.3.17"
         },
         "runtime": {
           "lib/net8.0/AWSSDK.Extensions.NETCore.Setup.dll": {
@@ -42,7 +44,7 @@
       },
       "AWSSDK.S3/4.0.18.6": {
         "dependencies": {
-          "AWSSDK.Core": "4.0.3.12"
+          "AWSSDK.Core": "4.0.3.17"
         },
         "runtime": {
           "lib/net8.0/AWSSDK.S3.dll": {
@@ -51,11 +53,22 @@
           }
         }
       },
+      "AWSSDK.Textract/4.0.3.16": {
+        "dependencies": {
+          "AWSSDK.Core": "4.0.3.17"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.Textract.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.3.16"
+          }
+        }
+      },
       "Azure.Core/1.47.1": {
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "8.0.0",
-          "System.ClientModel": "1.5.1",
-          "System.Memory.Data": "8.0.1"
+          "System.ClientModel": "1.9.0",
+          "System.Memory.Data": "10.0.1"
         },
         "runtime": {
           "lib/net8.0/Azure.Core.dll": {
@@ -702,6 +715,17 @@
           }
         }
       },
+      "OpenAI/2.9.1": {
+        "dependencies": {
+          "System.ClientModel": "1.9.0"
+        },
+        "runtime": {
+          "lib/net10.0/OpenAI.dll": {
+            "assemblyVersion": "2.9.1.0",
+            "fileVersion": "2.9.1.0"
+          }
+        }
+      },
       "Swashbuckle.AspNetCore/10.1.4": {
         "dependencies": {
           "Swashbuckle.AspNetCore.Swagger": "10.1.4",
@@ -739,14 +763,14 @@
           }
         }
       },
-      "System.ClientModel/1.5.1": {
+      "System.ClientModel/1.9.0": {
         "dependencies": {
-          "System.Memory.Data": "8.0.1"
+          "System.Memory.Data": "10.0.1"
         },
         "runtime": {
-          "lib/net8.0/System.ClientModel.dll": {
-            "assemblyVersion": "1.5.1.0",
-            "fileVersion": "1.500.125.36405"
+          "lib/net10.0/System.ClientModel.dll": {
+            "assemblyVersion": "1.9.0.0",
+            "fileVersion": "1.900.26.7706"
           }
         }
       },
@@ -841,11 +865,11 @@
           }
         }
       },
-      "System.Memory.Data/8.0.1": {
+      "System.Memory.Data/10.0.1": {
         "runtime": {
-          "lib/net8.0/System.Memory.Data.dll": {
-            "assemblyVersion": "8.0.0.1",
-            "fileVersion": "8.0.1024.46610"
+          "lib/net10.0/System.Memory.Data.dll": {
+            "assemblyVersion": "10.0.0.1",
+            "fileVersion": "10.0.125.57005"
           }
         }
       },
@@ -865,12 +889,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "AWSSDK.Core/4.0.3.12": {
+    "AWSSDK.Core/4.0.3.17": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-/FyE96xV2qJLgJN++ZW8M7udRf2NBLoku9AkEHLQqpH9uv0r0QQK2sw2pF3OvzKnuKsyp+Mx5wYwgFXPLnBb9g==",
-      "path": "awssdk.core/4.0.3.12",
-      "hashPath": "awssdk.core.4.0.3.12.nupkg.sha512"
+      "sha512": "sha512-Ab24kVquQ8kvuQKNe5MK/SvaXR4uoxPkAlTPALDEImaHcwsBg+UWfRVcNzLEx4dRR2y1mDFFh+zZ9TVMXGY6Jg==",
+      "path": "awssdk.core/4.0.3.17",
+      "hashPath": "awssdk.core.4.0.3.17.nupkg.sha512"
     },
     "AWSSDK.Extensions.NETCore.Setup/4.0.3.22": {
       "type": "package",
@@ -885,6 +909,13 @@
       "sha512": "sha512-RJUZT6HN4/xpYnUrjES2wiH1XooR7+cha5+enUb+TXjYMIDhLDG9wmoH0An3wViFUjXKL/ih3hpZg9yC3RDQAw==",
       "path": "awssdk.s3/4.0.18.6",
       "hashPath": "awssdk.s3.4.0.18.6.nupkg.sha512"
+    },
+    "AWSSDK.Textract/4.0.3.16": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OQZ2k+696V1FMdquw8vvYQ3wOjGBZRel1xxn0fvV3ZIyn3RkWmnC+CLrz+HfWtlVjxZBD3SACnvFLd+Rkdo9mg==",
+      "path": "awssdk.textract/4.0.3.16",
+      "hashPath": "awssdk.textract.4.0.3.16.nupkg.sha512"
     },
     "Azure.Core/1.47.1": {
       "type": "package",
@@ -1131,6 +1162,13 @@
       "path": "newtonsoft.json/13.0.3",
       "hashPath": "newtonsoft.json.13.0.3.nupkg.sha512"
     },
+    "OpenAI/2.9.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-KPTFYEt1EhrPeIZXGBE+DlutFEpMo/RspqSdUJ3p6pMqsw3NeGJcIja/K0He1j9KyRq8ASfzBgp2biWbNUGnFA==",
+      "path": "openai/2.9.1",
+      "hashPath": "openai.2.9.1.nupkg.sha512"
+    },
     "Swashbuckle.AspNetCore/10.1.4": {
       "type": "package",
       "serviceable": true,
@@ -1159,12 +1197,12 @@
       "path": "swashbuckle.aspnetcore.swaggerui/10.1.4",
       "hashPath": "swashbuckle.aspnetcore.swaggerui.10.1.4.nupkg.sha512"
     },
-    "System.ClientModel/1.5.1": {
+    "System.ClientModel/1.9.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-k2jKSO0X45IqhVOT9iQB4xralNN9foRQsRvXBTyRpAVxyzCJlG895T9qYrQWbcJ6OQXxOouJQ37x5nZH5XKK+A==",
-      "path": "system.clientmodel/1.5.1",
-      "hashPath": "system.clientmodel.1.5.1.nupkg.sha512"
+      "sha512": "sha512-1wdwKtMMMEFEYsxJmtrOd3G+7zVOVO3MlVZAsbKv9H0PnIx6J27fYAarMn0eQS0vKJPQL018DOb7YRK1O97p0A==",
+      "path": "system.clientmodel/1.9.0",
+      "hashPath": "system.clientmodel.1.9.0.nupkg.sha512"
     },
     "System.CodeDom/6.0.0": {
       "type": "package",
@@ -1229,12 +1267,12 @@
       "path": "system.identitymodel.tokens.jwt/8.0.1",
       "hashPath": "system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512"
     },
-    "System.Memory.Data/8.0.1": {
+    "System.Memory.Data/10.0.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-BVYuec3jV23EMRDeR7Dr1/qhx7369dZzJ9IWy2xylvb4YfXsrUxspWc4UWYid/tj4zZK58uGZqn2WQiaDMhmAg==",
-      "path": "system.memory.data/8.0.1",
-      "hashPath": "system.memory.data.8.0.1.nupkg.sha512"
+      "sha512": "sha512-BZC4mhdL569AXV56ep9YO6ShjhxFXGP7SwVX0Bc/e0dJPWnS6aBEXZJXqh64RVx8HquqWHkJUINBydLRQ1yq0g==",
+      "path": "system.memory.data/10.0.1",
+      "hashPath": "system.memory.data.10.0.1.nupkg.sha512"
     },
     "System.Security.Cryptography.ProtectedData/9.0.4": {
       "type": "package",

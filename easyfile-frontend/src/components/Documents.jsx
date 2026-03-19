@@ -151,6 +151,38 @@ export default function Documents() {
         <ReviewModal onClose={() => setIsReviewModalOpen(false)} />
       )}
 
+      {/* NEW: The AI Report Modal */}
+      {viewingReport && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-[#1f1f1f] border border-gray-700 p-6 rounded-lg shadow-xl max-w-2xl w-full m-4">
+            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                🤖 AI Document Analysis
+              </h2>
+              <button 
+                onClick={() => setViewingReport(null)}
+                className="text-gray-400 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* whitespace-pre-wrap ensures the AI's bullet points format correctly! */}
+            <div className="text-gray-300 whitespace-pre-wrap mb-6 max-h-96 overflow-y-auto leading-relaxed">
+              {viewingReport}
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => setViewingReport(null)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded transition"
+              >
+                Close Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

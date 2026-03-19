@@ -1,9 +1,9 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
-using EasyFile.Api.Interfaces;
+using EasyFile.Interfaces;
 
-namespace EasyFile.Api.Services
+namespace EasyFile.Services
 {
     public class DocumentService : IDocumentService
     {
