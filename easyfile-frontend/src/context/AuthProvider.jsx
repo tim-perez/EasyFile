@@ -6,11 +6,12 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         const token = localStorage.getItem('jwtToken');
         const role = localStorage.getItem('userRole');
-        // 1. Check if they are a guest
+        const firstName = localStorage.getItem('firstName');
+        const lastName = localStorage.getItem('lastName');
         const isGuest = localStorage.getItem('isGuest') === 'true'; 
         
         if (token && role) {
-            return { token, role, isGuest };
+            return { token, role, firstName, lastName, isGuest };
         }
         return null;
     });
@@ -21,14 +22,16 @@ export const AuthProvider = ({ children }) => {
         try {
             setLoading(true);
             const response = await api.post('/auth/login', { email, password });
-            const { token, role } = response.data;
+            const { token, role, firstName, lastName } = response.data;
             
             localStorage.setItem('jwtToken', token);
             localStorage.setItem('userRole', role);
+            localStorage.setItem('firstName', firstName);
+            localStorage.setItem('lastName', lastName);
             // Make sure to clear any old guest flags when a real user logs in
             localStorage.removeItem('isGuest'); 
             
-            setUser({ token, role, isGuest: false });
+            setUser({ token, role, firstName, lastName, isGuest: false });
         } catch (error) {
             console.error("Authentication failed:", error);
             throw error; 
@@ -58,6 +61,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('jwtToken');
         localStorage.removeItem('userRole');
         localStorage.removeItem('isGuest');
+        localStorage.removeItem('firstName');
+        localStorage.removeItem('lastName');
         setUser(null);
     };
 

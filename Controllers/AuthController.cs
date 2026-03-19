@@ -67,6 +67,8 @@ namespace EasyFile.Controllers
             return Ok(new { 
                 token = token, 
                 role = user.AccountType,
+                firstName = user.FirstName,
+                lastName = user.LastName,
                 message = "Login successful."
             });
         }

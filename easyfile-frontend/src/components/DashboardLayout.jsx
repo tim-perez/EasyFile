@@ -1,49 +1,353 @@
-import { Link, Outlet } from 'react-router-dom';
+import { useState, useContext } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; 
+import logo from '../assets/EasyFileLogo3.png'; 
 
 export default function DashboardLayout() {
-  return (
-    <div className="flex h-screen bg-[#282828] text-white font-sans overflow-hidden">
-      
-      {/* Sidebar */}
-      <aside className="w-64 shrink-0 border-r border-gray-700 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-gray-700">
-          <span className="text-xl font-bold text-red-500 tracking-wider">▶ EasyFile</span>
-        </div>
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <Link to="/" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Dashboard</Link>
-          <Link to="/documents" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Documents</Link>
-          <Link to="/recycle-bin" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Recycle Bin</Link>
-        </nav>
-      </aside>
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useContext(AuthContext); 
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+  const isActive = (path) => location.pathname === path;
+
+  const handleLogout = () => {
+    setIsProfileOpen(false);
+    logout();
+    navigate('/login');
+  };
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
+      
+      {/* ==================== TOP NAVIGATION ==================== */}
+      <header className="relative h-16 shrink-0 flex items-center justify-between px-4 sm:px-6 border-b transition-colors duration-300 bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800 z-30">
         
-        {/* Top Navigation */}
-        <header className="h-16 shrink-0 border-b border-gray-700 flex items-center justify-between px-6 bg-[#282828]">
-          <div className="flex-1 flex items-center">
+        {/* ==================== MOBILE SEARCH OVERLAY ==================== */}
+        {isSearchOpen && (
+          <div className="absolute inset-0 z-50 flex items-center bg-white dark:bg-[#1f1f1f] px-4 sm:px-6 w-full h-full">
+            <button 
+              onClick={() => setIsSearchOpen(false)}
+              className="p-2 mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-300"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <input 
+              type="text" 
+              autoFocus
+              placeholder="Search across your workspace" 
+              className="w-full bg-transparent py-2 text-sm border-none focus:outline-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+            />
+          </div>
+        )}
+
+        {/* Left: Hamburger & Logo */}
+        <div className="flex items-center gap-4 md:w-64 shrink-0">
+          <button 
+            onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          >
+            <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          
+          <Link to="/dashboard" className="flex items-center">
+            <img src={logo} alt="EasyFile Logo" className="h-8 w-auto" />
+          </Link>
+        </div>
+
+        {/* Center: Search Bar */}
+        <div className="hidden md:flex flex-1 justify-center max-w-2xl px-4">
+          <div className="w-full relative flex items-center">
+            <div className="absolute left-4 text-gray-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             <input 
               type="text" 
               placeholder="Search across your workspace" 
-              className="w-full max-w-xl bg-[#121212] border border-gray-600 rounded-full px-4 py-2 text-sm text-gray-300 focus:outline-none focus:border-blue-500"
+              className="w-full pl-12 pr-4 py-2 text-sm rounded-full border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500 dark:bg-[#121212] dark:border-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
-          <div className="flex items-center space-x-4 ml-4">
-            <button className="text-gray-400 hover:text-white">Help</button>
-            <button className="text-gray-400 hover:text-white">🔔</button>
-            <button className="bg-white text-black px-4 py-1.5 rounded-full font-medium text-sm hover:bg-gray-200 transition">
-              + Place an Order
-            </button>
-            <div className="w-8 h-8 rounded-full bg-gray-500 overflow-hidden border border-gray-600">
-              <img src="https://ui-avatars.com/api/?name=Tim+Perez&background=random" alt="User Profile" />
-            </div>
-          </div>
-        </header>
+        </div>
 
-        {/* Dynamic Content Space */}
-        <Outlet />
+        {/* Right: Actions & Profile */}
+        <div className="flex items-center gap-1 sm:gap-3 justify-end shrink-0">
+
+          {/* Mobile Search Button */}
+          <button 
+            onClick={() => setIsSearchOpen(true)}
+            className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-300" 
+            title="Search"
+          >
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+
+          {/* Notifications Button */}
+          <div className="relative shrink-0">
+            <button 
+              onClick={() => {
+                setIsNotificationsOpen(!isNotificationsOpen);
+                setIsProfileOpen(false); // Close profile if open
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              title="Notifications"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </button>
+
+            {/* Invisible overlay to close on outside click */}
+            {isNotificationsOpen && (
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setIsNotificationsOpen(false)}
+              ></div>
+            )}
+
+            {/* Notifications Dropdown */}
+            {isNotificationsOpen && (
+              <div className="absolute right-0 top-12 mt-1 w-[320px] bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 flex flex-col">
+                
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <h3 className="font-medium text-gray-900 dark:text-white">Notifications</h3>
+                  {/* Settings gear icon common in YT Studio */}
+                  <button className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition">
+                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                     </svg>
+                  </button>
+                </div>
+                
+                {/* Empty State Body */}
+                <div className="flex flex-col items-center justify-center p-8 text-center min-h-[220px]">
+                  {/* Large faded bell icon placeholder */}
+                  <svg className="w-24 h-24 text-gray-200 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    New notifications will show up here
+                  </p>
+                </div>
+
+              </div>
+            )}
+          </div>
+
+          <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap ml-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Upload
+          </button>
+
+          {/* CONDITIONAL RENDER: Guest vs Authenticated User */}
+          {user?.isGuest ? (
+            <button 
+              onClick={() => navigate('/login')}
+              className="hidden sm:flex items-center px-4 py-2 ml-1 rounded-full font-medium text-sm whitespace-nowrap transition-colors border border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 shadow-sm"
+            >
+              Login / Register
+            </button>
+          ) : (
+            <div className="relative ml-1 shrink-0">
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <img 
+                  src={`https://ui-avatars.com/api/?name=${user?.firstName || 'U'}+${user?.lastName || ''}&background=0D8ABC&color=fff`} 
+                  alt="User Profile" 
+                />
+              </button>
+
+              {/* Invisible overlay that closes the menu if you click anywhere else on the screen */}
+              {isProfileOpen && (
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsProfileOpen(false)}
+                ></div>
+              )}
+
+              {/* dropdown menu */}
+              {isProfileOpen && (
+                <div className="absolute right-0 top-12 mt-1 w-[300px] bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 py-2">
+                  
+                  {/* Account Identity Section */}
+                  <div className="px-4 py-3 flex items-start gap-4 border-b border-gray-200 dark:border-gray-700 mb-2">
+                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                      <img 
+                        src={`https://ui-avatars.com/api/?name=${user?.firstName || 'U'}+${user?.lastName || ''}&background=0D8ABC&color=fff`} 
+                        alt="User Profile" 
+                      />
+                    </div>
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="font-medium text-base text-gray-900 dark:text-white truncate">
+                        {user?.firstName} {user?.lastName}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                        {user?.role} Account
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions Section */}
+                  <div className="flex flex-col">
+                    <button className="w-full px-4 py-2.5 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors">
+                      <svg className="w-6 h-6 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Your Account
+                    </button>
+                    
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2.5 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors"
+                    >
+                      <svg className="w-6 h-6 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sign out
+                    </button>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* ==================== BOTTOM LAYOUT ==================== */}
+      <div className="flex flex-1 overflow-hidden z-0">
+        
+        {/* Sidebar */}
+        <aside 
+          className={`shrink-0 flex flex-col border-r transition-all duration-300 ease-in-out bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800
+            ${isSidebarExpanded ? 'w-64' : 'w-[72px]'}
+          `}
+        >
+          <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+            
+            <Link 
+              to="/dashboard" 
+              className={`flex items-center rounded-lg cursor-pointer transition-colors duration-200
+                ${isSidebarExpanded ? 'px-4 py-3' : 'px-0 py-3 justify-center'}
+                ${isActive('/dashboard') || isActive('/') 
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}
+              `}
+              title={!isSidebarExpanded ? "Dashboard" : ""}
+            >
+              <svg className={`w-6 h-6 shrink-0 ${isSidebarExpanded ? 'mr-4' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              {isSidebarExpanded && <span className="truncate">Dashboard</span>}
+            </Link>
+
+            <Link 
+              to="/documents" 
+              className={`flex items-center rounded-lg cursor-pointer transition-colors duration-200
+                ${isSidebarExpanded ? 'px-4 py-3' : 'px-0 py-3 justify-center'}
+                ${isActive('/documents') 
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}
+              `}
+              title={!isSidebarExpanded ? "Documents" : ""}
+            >
+              <svg className={`w-6 h-6 shrink-0 ${isSidebarExpanded ? 'mr-4' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isSidebarExpanded && <span className="truncate">Documents</span>}
+            </Link>
+
+            <Link 
+              to="/recycle-bin" 
+              className={`flex items-center rounded-lg cursor-pointer transition-colors duration-200
+                ${isSidebarExpanded ? 'px-4 py-3' : 'px-0 py-3 justify-center'}
+                ${isActive('/recycle-bin') 
+                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}
+              `}
+              title={!isSidebarExpanded ? "Recycle Bin" : ""}
+            >
+              <svg className={`w-6 h-6 shrink-0 ${isSidebarExpanded ? 'mr-4' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              {isSidebarExpanded && <span className="truncate">Recycle Bin</span>}
+            </Link>
+
+          </nav>
+        </aside>
+
+        {/* Main Content Area (Dynamic) */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 transition-colors duration-300 bg-gray-50 dark:bg-[#121212]">
+          <Outlet />
+        </main>
         
       </div>
     </div>
   );
 }
+// import { Link, Outlet } from 'react-router-dom';
+
+// export default function DashboardLayout() {
+//   return (
+//     <div className="flex h-screen bg-[#282828] text-white font-sans overflow-hidden">
+      
+//       {/* Sidebar */}
+//       <aside className="w-64 shrink-0 border-r border-gray-700 flex flex-col">
+//         <div className="h-16 flex items-center px-6 border-b border-gray-700">
+//           <span className="text-xl font-bold text-red-500 tracking-wider">▶ EasyFile</span>
+//         </div>
+//         <nav className="flex-1 px-4 py-6 space-y-2">
+//           <Link to="/" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Dashboard</Link>
+//           <Link to="/documents" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Documents</Link>
+//           <Link to="/recycle-bin" className="block px-4 py-2 rounded hover:bg-gray-800 hover:text-white transition text-gray-400 focus:bg-gray-700 focus:text-white">Recycle Bin</Link>
+//         </nav>
+//       </aside>
+
+//       {/* Main Content Area */}
+//       <div className="flex-1 flex flex-col">
+        
+//         {/* Top Navigation */}
+//         <header className="h-16 shrink-0 border-b border-gray-700 flex items-center justify-between px-6 bg-[#282828]">
+//           <div className="flex-1 flex items-center">
+//             <input 
+//               type="text" 
+//               placeholder="Search across your workspace" 
+//               className="w-full max-w-xl bg-[#121212] border border-gray-600 rounded-full px-4 py-2 text-sm text-gray-300 focus:outline-none focus:border-blue-500"
+//             />
+//           </div>
+//           <div className="flex items-center space-x-4 ml-4">
+//             <button className="text-gray-400 hover:text-white">Help</button>
+//             <button className="text-gray-400 hover:text-white">🔔</button>
+//             <button className="bg-white text-black px-4 py-1.5 rounded-full font-medium text-sm hover:bg-gray-200 transition">
+//               + Place an Order
+//             </button>
+//             <div className="w-8 h-8 rounded-full bg-gray-500 overflow-hidden border border-gray-600">
+//               <img src="https://ui-avatars.com/api/?name=Tim+Perez&background=random" alt="User Profile" />
+//             </div>
+//           </div>
+//         </header>
+
+//         {/* Dynamic Content Space */}
+//         <Outlet />
+        
+//       </div>
+//     </div>
+//   );
+// }
