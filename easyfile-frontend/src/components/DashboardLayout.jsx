@@ -133,7 +133,7 @@ export default function DashboardLayout() {
                 </div>
                 
                 {/* Empty State Body */}
-                <div className="flex flex-col items-center justify-center p-8 text-center min-h-[220px]">
+                <div className="flex flex-col items-center justify-center p-8 text-center min-h-55">
                   {/* Large faded bell icon placeholder */}
                   <svg className="w-24 h-24 text-gray-200 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -184,7 +184,7 @@ export default function DashboardLayout() {
 
               {/* dropdown menu */}
               {isProfileOpen && (
-                <div className="absolute right-0 top-12 mt-1 w-[300px] bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 py-2">
+                <div className="absolute right-0 top-12 mt-1 w-75 bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 py-2">
                   
                   {/* Account Identity Section */}
                   <div className="px-4 py-3 flex items-start gap-4 border-b border-gray-200 dark:border-gray-700 mb-2">
@@ -237,7 +237,7 @@ export default function DashboardLayout() {
         {/* Sidebar */}
         <aside 
           className={`shrink-0 flex flex-col border-r transition-all duration-300 ease-in-out bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800
-            ${isSidebarExpanded ? 'w-64' : 'w-[72px]'}
+            ${isSidebarExpanded ? 'w-64' : 'w-18'}
           `}
         >
           <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
