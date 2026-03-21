@@ -166,5 +166,84 @@ namespace EasyFile.Controllers
                 return StatusCode(500, new { message = "Failed to delete document.", error = ex.Message });
             }
         }
+
+        // ==========================================
+        // 5. GET RECYCLED DOCUMENTS
+        // ==========================================
+        [HttpGet("recycle")]
+        public async Task<IActionResult> GetRecycledDocuments()
+        {
+            try
+            {
+                var documents = await _dbContext.Documents
+                    .Where(d => d.Recycled == true) // ONLY grab the recycled ones!
+                    .OrderByDescending(d => d.DeletedAt) // Order by when they were deleted
+                    .ToListAsync();
+                    
+                return Ok(documents);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to fetch recycled documents.", error = ex.Message });
+            }
+        }
+
+        // ==========================================
+        // 6. RESTORE A DOCUMENT
+        // ==========================================
+        [HttpPost("{id}/restore")]
+        public async Task<IActionResult> RestoreDocument(int id)
+        {
+            try
+            {
+                var doc = await _dbContext.Documents.FindAsync(id);
+                if (doc == null) return NotFound(new { message = "Document not found." });
+
+                // Un-tag the document and clear the deleted date
+                doc.Recycled = false;
+                doc.DeletedAt = null;
+
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Document restored successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to restore document.", error = ex.Message });
+            }
+        }
+
+        // ==========================================
+        // 7. PERMANENTLY DELETE A DOCUMENT (The Shredder)
+        // ==========================================
+        [HttpDelete("{id}/permanent")]
+        public async Task<IActionResult> HardDeleteDocument(int id)
+        {
+            try
+            {
+                var doc = await _dbContext.Documents.FindAsync(id);
+                if (doc == null) return NotFound(new { message = "Document not found." });
+
+                // 1. Permanently delete from AWS S3
+                try 
+                {
+                    await _documentService.DeleteDocumentAsync(doc.FileUrl);
+                }
+                catch (Exception s3Ex)
+                {
+                    Console.WriteLine($"S3 Delete Warning: {s3Ex.Message}");
+                }
+
+                // 2. Erase record from SQL entirely
+                _dbContext.Documents.Remove(doc);
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Document permanently deleted." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to permanently delete.", error = ex.Message });
+            }
+        }
     }
 }

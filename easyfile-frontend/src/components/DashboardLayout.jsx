@@ -301,8 +301,9 @@ export default function DashboardLayout() {
 
         {/* Main Content Area (Dynamic) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 transition-colors duration-300 bg-gray-50 dark:bg-[#121212]">
-          <Outlet />
-        </main>        
+          {/* NEW: Pass the modal function down to any child component that needs it! */}
+          <Outlet context={{ onOpenUploadModal: () => setIsUploadModalOpen(true) }} />
+        </main>
       </div>
 
       {/* NEW: Render the Modal at the top level of the layout */}
@@ -314,6 +315,7 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
 // import { Link, Outlet } from 'react-router-dom';
 
 // export default function DashboardLayout() {

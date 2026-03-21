@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import api from '../services/api';
 
 export default function Documents() {
+  const { onOpenUploadModal } = useOutletContext();
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -178,9 +180,33 @@ export default function Documents() {
               <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
             )}
 
+            {/* UPDATED: VISUAL EMPTY STATE WITH ACTION */}
             {!isLoading && !error && documents.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">No documents available</p>
+              <div className="flex flex-col items-center justify-center py-24 px-6 text-center border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-lg mx-6 my-10 bg-gray-50 dark:bg-[#1a1a1a]">
+                
+                {/* 1. Sleek SVG Illustration (Matches the app's style) */}
+                <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 border-4 border-white dark:border-[#1f1f1f] shadow-lg">
+                    <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                
+                {/* 2. Primary Text */}
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No documents available</h3>
+                
+                {/* 3. Helper Text */}
+                <p className="text-gray-500 dark:text-gray-400 mb-10 text-sm max-w-sm">
+                  Your legal document vault is currently empty. Upload your first case filing or contract to begin the AI analysis.
+                </p>
+
+                {/* 4. The Action Button */}
+                <button 
+                  onClick={onOpenUploadModal} 
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm uppercase tracking-wider flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  Upload Documents
+                </button>
               </div>
             )}
 
