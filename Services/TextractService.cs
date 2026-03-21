@@ -9,17 +9,16 @@ namespace EasyFile.Services
 {
     public class TextractService : ITextractService
     {
-        private readonly AmazonTextractClient _textractClient;
+        private readonly IAmazonTextract _textractClient;
 
-        public TextractService()
+        // CHANGED: We inject the interface here so it inherits the keys from Program.cs!
+        public TextractService(IAmazonTextract textractClient)
         {
-            // This automatically uses the same AWS credentials you set up for S3
-            _textractClient = new AmazonTextractClient();
+            _textractClient = textractClient;
         }
 
         public async Task<string> ExtractTextAsync(Stream fileStream)
         {
-            // Convert the incoming file stream into a byte array for AWS
             using var memoryStream = new MemoryStream();
             await fileStream.CopyToAsync(memoryStream);
             
@@ -31,11 +30,8 @@ namespace EasyFile.Services
                 }
             };
 
-            // Send the file to AWS Textract
             var response = await _textractClient.DetectDocumentTextAsync(request);
 
-            // Textract returns data in "Blocks". We just want to grab all the lines of text
-            // and join them together with spaces so the AI can read it like a book.
             var extractedText = string.Join(" ", response.Blocks
                 .Where(b => b.BlockType == BlockType.LINE)
                 .Select(b => b.Text));

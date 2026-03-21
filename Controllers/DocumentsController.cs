@@ -99,7 +99,13 @@ namespace EasyFile.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while uploading the file.", error = ex.Message });
+                // NEW: Drill down into the InnerException to get the exact SQL Server complaint
+                var actualError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                
+                return StatusCode(500, new { 
+                    message = "An error occurred while uploading the file.", 
+                    error = actualError 
+                }); 
             }
         }
 

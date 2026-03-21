@@ -72,6 +72,37 @@ namespace EasyFile.Controllers
                 message = "Login successful."
             });
         }
+        // ==========================================
+        // NEW: Real Guest User Database Registration
+        // ==========================================
+        [HttpPost("guest-login")]
+        public async Task<IActionResult> GuestLogin() // <-- Notice we added 'async Task' here!
+        {
+            // 1. Create a real user object with a randomized guest email
+            var guestUser = new User 
+            { 
+                Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@easyfile.com",
+                AccountType = "Customer", // Keeps your React UI happy
+                FirstName = "Guest",
+                LastName = "User",
+                PasswordHash = "" 
+            };
+
+            // 2. Officially save them to the database so SQL Server assigns a REAL ID!
+            _dbContext.Users.Add(guestUser);
+            await _dbContext.SaveChangesAsync();
+
+            // 3. Generate the token using the newly approved database ID
+            var token = GenerateJwtToken(guestUser);
+
+            return Ok(new { 
+                token = token, 
+                role = guestUser.AccountType, 
+                firstName = guestUser.FirstName, 
+                lastName = guestUser.LastName,
+                message = "Guest login successful."
+            });
+        }
         private string GenerateJwtToken(User user)
         {
             var secretKey = _configuration["JwtSettings:SecretKey"] 

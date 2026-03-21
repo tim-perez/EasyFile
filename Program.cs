@@ -7,6 +7,7 @@ using System.Text;
 using EasyFile.Interfaces; 
 using EasyFile.Services;   
 using Amazon.S3;
+using Amazon.Textract;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,13 +49,22 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Tells the app how to build the IAmazonS3 client
-builder.Services.AddAWSService<IAmazonS3>();
-
 // Register your custom services here!
 builder.Services.AddScoped<IAiReviewService, AiReviewService>();
-builder.Services.AddScoped<IDocumentService, DocumentService>(); // Don't forget this one!
+builder.Services.AddScoped<IDocumentService, DocumentService>(); 
 builder.Services.AddScoped<ITextractService, TextractService>();
+
+// ==========================================
+// NEW: Force AWS to use the easyfile-backend user
+// ==========================================
+var awsOptions = builder.Configuration.GetAWSOptions("AWS");
+awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(
+    builder.Configuration["AWS:AccessKey"], 
+    builder.Configuration["AWS:SecretKey"]);
+
+builder.Services.AddDefaultAWSOptions(awsOptions);
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddAWSService<IAmazonTextract>(); // <-- This gives Textract the keys!
 
 var app = builder.Build();
 

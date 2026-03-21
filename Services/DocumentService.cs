@@ -8,7 +8,7 @@ namespace EasyFile.Services
     public class DocumentService : IDocumentService
     {
         private readonly IAmazonS3 _s3Client;
-        private const string BucketName = "easyfile-documents-bucket"; // Store in appsettings.json in production
+        private const string BucketName = "easyfile-documents-dev"; // Store in appsettings.json in production
 
         public DocumentService(IAmazonS3 s3Client)
         {

@@ -98,7 +98,9 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
       clearInterval(progressInterval);
       setUploadState('error');
       // Look for our specific AI Gatekeeper rejection message
+      // NEW: We are telling React to prioritize the exact system error (ex.Message)
       setErrorMessage(
+        error.response?.data?.error ||    // <-- Adds the specific C# exception
         error.response?.data?.message || 
         'An error occurred during upload or analysis. Please try again.'
       );

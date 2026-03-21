@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
         const isGuest = localStorage.getItem('isGuest') === 'true'; 
         
         if (token && role) {
-            return { token, role, firstName, lastName, isGuest };
+            return { token, role, firstName, lastName, isGuest }; 
         }
         return null;
     });
@@ -22,16 +22,16 @@ export const AuthProvider = ({ children }) => {
         try {
             setLoading(true);
             const response = await api.post('/auth/login', { email, password });
-            const { token, role, firstName, lastName } = response.data;
+            
+            const { token, role, firstName, lastName } = response.data; 
             
             localStorage.setItem('jwtToken', token);
             localStorage.setItem('userRole', role);
             localStorage.setItem('firstName', firstName);
             localStorage.setItem('lastName', lastName);
-            // Make sure to clear any old guest flags when a real user logs in
             localStorage.removeItem('isGuest'); 
             
-            setUser({ token, role, firstName, lastName, isGuest: false });
+            setUser({ token, role, firstName, lastName, isGuest: false }); 
         } catch (error) {
             console.error("Authentication failed:", error);
             throw error; 
@@ -40,23 +40,32 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // 2. Our new fake login function
-    const loginAsGuest = () => {
-        const token = 'guest-token-' + Math.random().toString(36).substr(2, 9);
-        const role = 'Customer'; // Send them to the Customer portal
-        
-        localStorage.setItem('jwtToken', token);
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('isGuest', 'true');
-        
-        // Initialize their document limit counter if it doesn't exist
-        if (!localStorage.getItem('guestDocCount')) {
-            localStorage.setItem('guestDocCount', '0');
-        }
+    const loginAsGuest = async () => {
+        try {
+            setLoading(true);
+            const response = await api.post('/auth/guest-login');
+            
+            const { token, role, firstName, lastName } = response.data;
+            
+            localStorage.setItem('jwtToken', token);
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('firstName', firstName);
+            localStorage.setItem('lastName', lastName);
+            localStorage.setItem('isGuest', 'true');
+            
+            if (!localStorage.getItem('guestDocCount')) {
+                localStorage.setItem('guestDocCount', '0');
+            }
 
-        setUser({ token, role, isGuest: true });
+            setUser({ token, role, firstName, lastName, isGuest: true });
+        } catch (error) {
+            console.error("Guest login failed:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    // THIS WAS THE MISSING FUNCTION!
     const logout = () => {
         localStorage.removeItem('jwtToken');
         localStorage.removeItem('userRole');
@@ -67,7 +76,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        // 3. Add loginAsGuest to the provider value
         <AuthContext.Provider value={{ user, login, loginAsGuest, logout, loading }}>
             {children}
         </AuthContext.Provider>
