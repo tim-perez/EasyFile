@@ -76,6 +76,10 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      
+      // NEW: Grab the ID and pack it in the box so C# accepts the delivery!
+      const currentUserId = user?.id || localStorage.getItem('userId') || "1";
+      formData.append('userId', currentUserId);
 
       // Call the C# Backend
       await api.post('/documents/upload', formData, {
@@ -92,7 +96,11 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
         localStorage.setItem('guestDocCount', (currentCount + 1).toString());
       }
 
-      setTimeout(() => setUploadState('success'), 500);
+      setTimeout(() => {
+        setUploadState('success');
+        // NEW: Broadcast a global signal that a new document is ready!
+        window.dispatchEvent(new Event('documentUploaded')); 
+      }, 500);
 
     } catch (error) {
       clearInterval(progressInterval);

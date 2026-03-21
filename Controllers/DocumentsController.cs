@@ -1,218 +1,170 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 using System;
+using System.Threading.Tasks;
+using System.Text.Json;
 using System.Linq;
-using EasyFile.Interfaces; // Or EasyFile.Interfaces depending on where your old interface was
+using Microsoft.EntityFrameworkCore;
 using EasyFile.Data;
 using EasyFile.Models;
+using EasyFile.Interfaces;
 
 namespace EasyFile.Controllers
 {
-    [Authorize]
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class DocumentsController : ControllerBase
     {
-        private readonly IDocumentService _documentService;
         private readonly AppDbContext _dbContext;
+        private readonly IDocumentService _documentService;
         private readonly ITextractService _textractService;
         private readonly IAiReviewService _aiReviewService;
 
-        // 1. We added the two new services to the constructor here
         public DocumentsController(
-            IDocumentService documentService, 
             AppDbContext dbContext,
+            IDocumentService documentService,
             ITextractService textractService,
             IAiReviewService aiReviewService)
         {
-            _documentService = documentService;
             _dbContext = dbContext;
+            _documentService = documentService;
             _textractService = textractService;
             _aiReviewService = aiReviewService;
         }
 
+        // ==========================================
+        // 1. UPLOAD AND EXTRACT DATA
+        // ==========================================
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file)
+        public async Task<IActionResult> UploadDocument(IFormFile file, [FromForm] string userId)
         {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest(new { message = "No file was provided." });
-            }
-
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
-            {
-                return Unauthorized(new { message = "Invalid user token." });
-            }
-
             try
             {
-                // ==========================================
-                // STEP 1: THE EYES (Extract Text with AWS)
-                // ==========================================
-                string extractedText;
-                using (var stream = file.OpenReadStream())
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "No file uploaded." });
+
+                // 1. Keep track of the exact name the user uploaded (e.g. "SUM-100.pdf")
+                var originalFileName = file.FileName;
+
+                // 2. Upload to S3
+                var fileKey = await _documentService.UploadDocumentAsync(file, userId);
+
+                // 3. Extract Text via AWS Textract
+                using var fileStream = file.OpenReadStream();
+                var extractedText = await _textractService.ExtractTextAsync(fileStream);
+
+                // 4. Send text to AI and get JSON back
+                var aiReportJson = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
+
+                // 5. Parse the JSON to grab the "Fill in the Blank" data
+                using JsonDocument jsonDoc = JsonDocument.Parse(aiReportJson);
+                var aiTitle = jsonDoc.RootElement.GetProperty("documentTitle").GetString();
+                var aiCaseNumber = jsonDoc.RootElement.GetProperty("caseNumber").GetString();
+                var aiStatus = jsonDoc.RootElement.GetProperty("status").GetString();
+                
+                // OPTIMIZATION: Grab the county once and save it as a variable!
+                var aiCounty = jsonDoc.RootElement.GetProperty("county").GetString();
+
+                // Print the exact data to your terminal
+                Console.WriteLine("\n=== AI EXTRACTION SUCCESS ===");
+                Console.WriteLine($"File Name Caught: {originalFileName}");
+                Console.WriteLine($"AI Document Title: {aiTitle}");
+                Console.WriteLine($"AI Case Number: {aiCaseNumber}");
+                Console.WriteLine($"AI County: {aiCounty ?? "Unknown"}");
+                Console.WriteLine("=============================\n");
+
+                // 6. Save EVERYTHING to SQL Server
+                var newDocument = new Document
                 {
-                    extractedText = await _textractService.ExtractTextAsync(stream);
-                }
-
-                // ==========================================
-                // STEP 2: THE BRAIN (Review Text with AI)
-                // ==========================================
-                var aiReport = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
-
-                // ==========================================
-                // STEP 3: THE GATEKEEPER (Check for invalid files)
-                // ==========================================
-                if (aiReport.Trim() == "REJECT_NON_LEGAL_DOCUMENT")
-                {
-                    // We stop the process right here. The file is NOT saved to S3 or the DB.
-                    return BadRequest(new { message = "The uploaded file does not appear to be a valid legal document. Please upload a court filing, affidavit, or similar legal document." });
-                }
-
-                // If it IS a legal document, we proceed with the normal S3 upload
-                var fileKey = await _documentService.UploadDocumentAsync(file, userIdString);
-
-                var document = new Document
-                {
+                    UploaderId = int.Parse(userId),
+                    FileName = originalFileName,               
+                    DocumentTitle = aiTitle ?? "Unknown",      
+                    CaseNumber = aiCaseNumber ?? "Missing",    
+                    FileUrl = fileKey,                         
                     FileType = file.ContentType,
-                    FileUrl = fileKey,
-                    UploaderId = uploaderId,
-                    ReportUrl = aiReport,   // Save the AI's checklist report to the database!
-                    Status = "Reviewed"    // Let's automatically update the status to Reviewed!
+                    Status = aiStatus ?? "Processed",
+                    County = aiCounty ?? "Unknown" // Use the variable here!
                 };
 
-                _dbContext.Documents.Add(document);
+                _dbContext.Documents.Add(newDocument);
                 await _dbContext.SaveChangesAsync();
 
-                return Ok(new { 
-                    message = "File uploaded and successfully reviewed by AI.", 
-                    documentId = document.Id,
-                    fileUrl = document.FileUrl,
-                    report = aiReport // We can send the report straight back to React too
-                });
+                return Ok(new { message = "Upload and AI analysis complete!", documentId = newDocument.Id });
             }
             catch (Exception ex)
             {
-                // NEW: Drill down into the InnerException to get the exact SQL Server complaint
                 var actualError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                
-                return StatusCode(500, new { 
-                    message = "An error occurred while uploading the file.", 
-                    error = actualError 
-                }); 
+                return StatusCode(500, new { message = "An error occurred.", error = actualError });
             }
         }
 
+        // ==========================================
+        // 2. GET ALL DOCUMENTS FOR THE TABLE
+        // ==========================================
         [HttpGet]
         public async Task<IActionResult> GetDocuments()
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            try
             {
-                return Unauthorized(new { message = "Invalid user token." });
+                var documents = await _dbContext.Documents
+                    .Where(d => d.Recycled == false) // NEW: Hide recycled documents!
+                    .OrderByDescending(d => d.CreatedAt)
+                    .ToListAsync();
+                    
+                return Ok(documents);
             }
-
-            var documents = await _dbContext.Documents
-                .Where(d => d.UploaderId == uploaderId && !d.Recycled)
-                .OrderByDescending(d => d.CreatedAt)
-                .ToListAsync();
-
-            return Ok(documents);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to fetch documents.", error = ex.Message });
+            }
         }
 
-        [HttpDelete("recycle")]
-        public async Task<IActionResult> RecycleDocuments([FromBody] List<int> documentIds)
+        // ==========================================
+        // 3. GET SECURE AWS LINK FOR VIEWING
+        // ==========================================
+        [HttpGet("{id}/url")]
+        public async Task<IActionResult> GetDocumentUrl(int id)
         {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            try
             {
-                return Unauthorized(new { message = "Invalid user token." });
-            }
+                var doc = await _dbContext.Documents.FindAsync(id);
+                if (doc == null) return NotFound(new { message = "Document not found." });
 
-            var documents = await _dbContext.Documents
-                .Where(d => documentIds.Contains(d.Id) && d.UploaderId == uploaderId)
-                .ToListAsync();
-            
-            foreach (var doc in documents)
+                // Notice we are using doc.FileUrl here!
+                var url = await _documentService.GetDocumentPresignedUrlAsync(doc.FileUrl);
+                
+                return Ok(new { url = url });
+            }
+            catch (Exception ex)
             {
+                return StatusCode(500, new { message = "Could not generate link.", error = ex.Message });
+            }
+        }
+
+        // ==========================================
+        // 4. SOFT DELETE A DOCUMENT
+        // ==========================================
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDocument(int id)
+        {
+            try
+            {
+                var doc = await _dbContext.Documents.FindAsync(id);
+                if (doc == null) return NotFound(new { message = "Document not found." });
+
+                // NEW: Soft Delete Logic! 
+                // We do NOT delete from AWS S3 here. We just tag it for the Recycle Bin.
                 doc.Recycled = true;
                 doc.DeletedAt = DateTime.UtcNow;
+
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Document moved to recycle bin." });
             }
-
-            await _dbContext.SaveChangesAsync();
-
-            return Ok(new { message = "Documents successfully moved to trash." });
-        }
-
-        [HttpGet("recycle")]
-        public async Task<IActionResult> GetRecycledDocuments()
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
+            catch (Exception ex)
             {
-                return Unauthorized(new { message = "Invalid user token." });
+                return StatusCode(500, new { message = "Failed to delete document.", error = ex.Message });
             }
-
-            var documents = await _dbContext.Documents
-                .Where(d => d.UploaderId == uploaderId && d.Recycled)
-                .OrderByDescending(d => d.CreatedAt)
-                .ToListAsync();
-
-            return Ok(documents);
-        }
-
-        [HttpPost("restore")]
-        public async Task<IActionResult> RestoreDocuments([FromBody] List<int> documentIds)
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
-            {
-                return Unauthorized(new { message = "Invalid user token." });
-            }
-
-            var documents = await _dbContext.Documents
-                .Where(d => documentIds.Contains(d.Id) && d.UploaderId == uploaderId)
-                .ToListAsync();
-
-            foreach (var doc in documents)
-            {
-                doc.Recycled = false;
-                doc.DeletedAt = null;
-            }
-
-            await _dbContext.SaveChangesAsync();
-
-            return Ok(new { message = "Documents successfully restored." });
-        }
-
-        [HttpDelete("permanent-delete")]
-        public async Task<IActionResult> PermanentDeleteDocuments([FromBody] List<int> documentIds)
-        {
-            var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int uploaderId))
-            {
-                return Unauthorized(new { message = "Invalid user token." });
-            }
-
-            var documents = await _dbContext.Documents
-                .Where(d => documentIds.Contains(d.Id) && d.UploaderId == uploaderId)
-                .ToListAsync();
-
-            foreach (var doc in documents)
-            {
-                await _documentService.DeleteDocumentAsync(doc.FileUrl);
-            }
-            _dbContext.Documents.RemoveRange(documents);
-        
-            await _dbContext.SaveChangesAsync();
-
-            return Ok(new { message = "Documents permanently deleted." });
         }
     }
 }

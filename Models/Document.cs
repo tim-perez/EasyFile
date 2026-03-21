@@ -12,6 +12,14 @@ public class Document
     public string FileType { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string Status { get; set; } = "Pending";
+    
+    // NEW: Columns for AI Extraction and File Naming
+    public string FileName { get; set; } = string.Empty;       // e.g., "SUM-100.pdf"
+    public string DocumentTitle { get; set; } = "Processing..."; // e.g., "Summons"
+    public string CaseNumber { get; set; } = "Processing...";    // e.g., "CV12345"
+
+    public string County { get; set; } = string.Empty;
+
     public string FileUrl { get; set; } = string.Empty;
     public string ReportUrl { get; set; } = string.Empty;
     
