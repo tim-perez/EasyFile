@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../services/api';
+import DocumentReportModal from '../components/DocumentReportModal'; 
 
 export default function Documents() {
   const { onOpenUploadModal } = useOutletContext();
@@ -8,8 +9,9 @@ export default function Documents() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // NEW: State to track which checkboxes are checked!
   const [selectedIds, setSelectedIds] = useState([]);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [selectedReportDocument, setSelectedReportDocument] = useState(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -252,7 +254,15 @@ export default function Documents() {
                     </div>
 
                     <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium whitespace-nowrap">View Report</button>
+                      <button
+                        onClick={() => {
+                          setSelectedReportDocument(doc);
+                          setIsReportModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium whitespace-nowrap"
+                      >
+                        View Report
+                      </button>
                       <button onClick={() => handleDeleteDocument(doc.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20" title="Move to Recycle Bin">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
@@ -266,6 +276,12 @@ export default function Documents() {
           </div>
         </div>
       </div>
+      {/* NEW: The Document Report Modal */}
+      <DocumentReportModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => setIsReportModalOpen(false)} 
+        document={selectedReportDocument} 
+      />
     </div>
   );
 }

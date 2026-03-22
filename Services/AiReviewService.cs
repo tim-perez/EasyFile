@@ -38,6 +38,7 @@ namespace EasyFile.Services
                 ""documentTitle"": ""Summons"",
                 ""caseNumber"": ""2026-CV-12345"",
                 ""status"": ""Approved"",
+                ""county"": ""Los Angeles"", 
                 ""summary"": ""This is a simulated AI review of the summons.""
             }";
         }

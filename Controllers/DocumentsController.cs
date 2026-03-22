@@ -56,14 +56,15 @@ namespace EasyFile.Controllers
                 // 4. Send text to AI and get JSON back
                 var aiReportJson = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
 
-                // 5. Parse the JSON to grab the "Fill in the Blank" data
+                // 5. Safely Parse the JSON to grab the "Fill in the Blank" data
                 using JsonDocument jsonDoc = JsonDocument.Parse(aiReportJson);
-                var aiTitle = jsonDoc.RootElement.GetProperty("documentTitle").GetString();
-                var aiCaseNumber = jsonDoc.RootElement.GetProperty("caseNumber").GetString();
-                var aiStatus = jsonDoc.RootElement.GetProperty("status").GetString();
-                
-                // OPTIMIZATION: Grab the county once and save it as a variable!
-                var aiCounty = jsonDoc.RootElement.GetProperty("county").GetString();
+                var root = jsonDoc.RootElement;
+
+                // TryGetProperty won't crash if the AI forgets a key! It just safely defaults to null.
+                var aiTitle = root.TryGetProperty("documentTitle", out var titleProp) ? titleProp.GetString() : "Unknown";
+                var aiCaseNumber = root.TryGetProperty("caseNumber", out var caseProp) ? caseProp.GetString() : "Missing";
+                var aiStatus = root.TryGetProperty("status", out var statusProp) ? statusProp.GetString() : "Processed";
+                var aiCounty = root.TryGetProperty("county", out var countyProp) ? countyProp.GetString() : "Unknown";
 
                 // Print the exact data to your terminal
                 Console.WriteLine("\n=== AI EXTRACTION SUCCESS ===");
