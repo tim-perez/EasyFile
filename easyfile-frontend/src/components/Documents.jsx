@@ -116,7 +116,7 @@ export default function Documents() {
 
   return (
     <div className="max-w-7xl mx-auto w-full relative">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Account Documents</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Documents</h1>
 
       {/* NEW: SMOOTH ANIMATED ACTION BAR */}
       {/* This uses max-height and opacity to slide open exactly like YouTube Studio */}

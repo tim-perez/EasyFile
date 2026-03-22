@@ -4,10 +4,10 @@ import InformationWidgets from './widgets/InformationWidgets';
 
 export default function CustomerPortal() {
   return (
-    <div className="p-6 bg-[#1f1f1f] min-h-full">
-      <h1 className="text-2xl font-bold mb-6">User dashboard</h1>
+    <div className="min-h-full p-6 lg:p-8 text-gray-900 dark:text-white">
+      <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
       
-      {/* 3-Column Grid Layout */}
+      {/* 3-Column Grid Layout - Matches YouTube Studio exactly */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ActionWidget />
         <AnalyticsWidget />
