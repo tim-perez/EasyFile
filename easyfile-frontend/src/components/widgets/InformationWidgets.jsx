@@ -21,10 +21,9 @@ export default function InformationWidgets() {
            </span>
         </div>
 
-        <h3 className="text-sm font-bold mb-2 text-gray-900 dark:text-white">Mastering the AI Review Process</h3>
+        <h3 className="text-sm font-bold mb-2 text-gray-900 dark:text-white">Using AI to Automate Document Review</h3>
         <p className="text-xs text-gray-600 dark:text-gray-400 mb-5 leading-relaxed">
-          Learn how to use our AI-powered gatekeepers to scan for missing signatures, 
-          verify case numbers, and calculate filing fees in seconds.
+          In this tutorial, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
         </p>
         
         <button className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all">

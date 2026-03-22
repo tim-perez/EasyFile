@@ -60,7 +60,7 @@ export default function AnalyticsWidget() {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 h-full min-h-[400px] flex flex-col shadow-sm">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 h-full min-h-100 flex flex-col shadow-sm">
       
       {/* Header */}
       <h2 className="text-lg font-semibold mb-1 text-gray-900 dark:text-white">Document analytics</h2>
