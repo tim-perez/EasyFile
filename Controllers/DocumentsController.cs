@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using EasyFile.Data;
 using EasyFile.Models;
 using EasyFile.Interfaces;
@@ -61,7 +64,7 @@ namespace EasyFile.Controllers
                     Console.WriteLine("\n=== GATEKEEPER 1 TRIGGERED ===");
                     Console.WriteLine($"File {originalFileName} failed text extraction.");
 
-                    var failedDocument = new Document
+                    var failedDocument = new EasyFile.Models.Document
                     {
                         UploaderId = int.Parse(userId),
                         FileName = originalFileName,
@@ -130,7 +133,7 @@ namespace EasyFile.Controllers
                     ? string.Join("|", warnProp.EnumerateArray().Select(w => w.GetString())) 
                     : "";
 
-                var newDocument = new Document
+                var newDocument = new EasyFile.Models.Document
                 {
                     UploaderId = int.Parse(userId),
                     FileName = originalFileName ?? "Unknown_File.pdf",
@@ -311,6 +314,121 @@ namespace EasyFile.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Failed to permanently delete.", error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/report/download")]
+        public async Task<IActionResult> DownloadReport(int id)
+        {
+            try
+            {
+                // 1. Find the specific document in the database
+                var document = await _dbContext.Documents.FindAsync(id);
+                if (document == null)
+                    return NotFound(new { message = "Document not found." });
+
+                // 2. Configure QuestPDF (Required for the free Community tier)
+                QuestPDF.Settings.License = LicenseType.Community;
+
+                // 3. Draw the PDF Document
+                var pdfBytes = QuestPDF.Fluent.Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.Letter);
+                        page.Margin(1, Unit.Inch);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial).FontColor(Colors.Black));
+
+                        // --- HEADER ---
+                        page.Header().Column(col =>
+                        {
+                            col.Item().Text("EasyFile Intelligence Report").SemiBold().FontSize(20).FontColor(Colors.Blue.Darken2);
+                            col.Item().Text($"Source Document: {document.FileName}").FontSize(10).FontColor(Colors.Grey.Medium);
+                            col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                        });
+
+                        // --- BODY ---
+                        page.Content().PaddingVertical(15).Column(col =>
+                        {
+                            col.Spacing(15);
+
+                            // 🔴 WARNINGS SECTION
+                            col.Item().Background(Colors.Red.Lighten5).Padding(10).Column(warnCol =>
+                            {
+                                warnCol.Item().Text("PRE-FLIGHT REJECTION WARNINGS").Bold().FontColor(Colors.Red.Medium);
+                                
+                                var warnings = string.IsNullOrEmpty(document.Warnings) ? Array.Empty<string>() : document.Warnings.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                                
+                                if (warnings.Length > 0)
+                                {
+                                    foreach(var w in warnings)
+                                    {
+                                        warnCol.Item().PaddingTop(5).Text($"• {w}").FontColor(Colors.Red.Darken2);
+                                    }
+                                }
+                                else
+                                {
+                                    warnCol.Item().PaddingTop(5).Text("No critical issues detected by AI.").FontColor(Colors.Green.Medium);
+                                }
+                            });
+
+                            // 🏛 SECTION 1: SETUP
+                            col.Item().Text("1. SETUP & CATEGORIZATION").Bold().FontColor(Colors.Grey.Darken3);
+                            col.Item().PaddingLeft(10).Column(sub =>
+                            {
+                                sub.Item().Text(text => { text.Span("Case Title: ").SemiBold(); text.Span(document.CaseTitle); });
+                                
+                                // Handle the special Subsequent Filing logic!
+                                var filingTypeDisplay = document.FilingType;
+                                if (document.FilingType == "Subsequent Filing" && document.CaseNumber != "Missing")
+                                {
+                                    filingTypeDisplay += $" ({document.CaseNumber})";
+                                }
+                                sub.Item().Text(text => { text.Span("Filing Type: ").SemiBold(); text.Span(filingTypeDisplay); });
+                                
+                                sub.Item().Text(text => { text.Span("Case Category: ").SemiBold(); text.Span(document.CaseCategory); });
+                                sub.Item().Text(text => { text.Span("Case Type: ").SemiBold(); text.Span(document.CaseType); });
+                            });
+
+                            // ⚖️ SECTION 2: PARTIES
+                            col.Item().Text("2. PARTIES & REPRESENTATION").Bold().FontColor(Colors.Grey.Darken3);
+                            col.Item().PaddingLeft(10).Column(sub =>
+                            {
+                                sub.Item().Text(text => { text.Span("Filed By: ").SemiBold(); text.Span(document.FiledBy); });
+                                sub.Item().Text(text => { text.Span("Refers To: ").SemiBold(); text.Span(document.RefersTo); });
+                                sub.Item().Text(text => { text.Span("Representation: ").SemiBold(); text.Span(document.Representation); });
+                            });
+
+                            // 📑 SECTION 3: SPECIFICS
+                            col.Item().Text("3. DOCUMENT SPECIFICS").Bold().FontColor(Colors.Grey.Darken3);
+                            col.Item().PaddingLeft(10).Column(sub =>
+                            {
+                                sub.Item().Text(text => { text.Span("E-Filing Doc Type: ").SemiBold(); text.Span(document.EFilingDocType).FontColor(Colors.Blue.Medium); });
+                                sub.Item().Text(text => { text.Span("Exact Title: ").SemiBold(); text.Span(document.DocumentTitle); });
+                                sub.Item().Text(text => { text.Span("Estimated Fee: ").SemiBold(); text.Span(document.EstimatedFee); });
+                            });
+                        });
+
+                        // --- FOOTER ---
+                        page.Footer().AlignCenter().Text(x =>
+                        {
+                            x.Span("Generated by EasyFile AI • Page ");
+                            x.CurrentPageNumber();
+                            x.Span(" of ");
+                            x.TotalPages();
+                        });
+                    });
+                }).GeneratePdf(); // This command compiles the drawing into a raw PDF byte array!
+
+                // 4. Return the file securely to React
+                var sanitizedFileName = $"{document.FileName ?? "Legal_Document"}_AI_Report.pdf";
+                return File(pdfBytes, "application/pdf", sanitizedFileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[PDF Gen Error] {ex.Message}");
+                return StatusCode(500, new { message = "Failed to generate PDF report." });
             }
         }
     }

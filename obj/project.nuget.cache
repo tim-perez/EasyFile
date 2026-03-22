@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "dQ2vi9IcOeU=",
+  "dgSpecHash": "tKrdgK+Q8Lk=",
   "success": true,
   "projectFilePath": "/Users/timperez/Documents/GitHub/EasyFile/EasyFile.csproj",
   "expectedPackageFiles": [
@@ -47,6 +47,7 @@
     "/Users/timperez/.nuget/packages/mono.texttemplating/3.0.0/mono.texttemplating.3.0.0.nupkg.sha512",
     "/Users/timperez/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
     "/Users/timperez/.nuget/packages/openai/2.9.1/openai.2.9.1.nupkg.sha512",
+    "/Users/timperez/.nuget/packages/questpdf/2026.2.4/questpdf.2026.2.4.nupkg.sha512",
     "/Users/timperez/.nuget/packages/swashbuckle.aspnetcore/10.1.4/swashbuckle.aspnetcore.10.1.4.nupkg.sha512",
     "/Users/timperez/.nuget/packages/swashbuckle.aspnetcore.swagger/10.1.4/swashbuckle.aspnetcore.swagger.10.1.4.nupkg.sha512",
     "/Users/timperez/.nuget/packages/swashbuckle.aspnetcore.swaggergen/10.1.4/swashbuckle.aspnetcore.swaggergen.10.1.4.nupkg.sha512",
