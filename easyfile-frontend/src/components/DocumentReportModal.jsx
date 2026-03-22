@@ -1,33 +1,29 @@
 import React, { useState } from 'react';
-import api from '../services/api'; // Make sure your API service is imported!
+import api from '../services/api'; 
 
 export default function DocumentReportModal({ isOpen, onClose, document }) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen || !document) return null;
 
-  const mockWarnings = [
-    "Missing Signature: The signature line on page 2 appears blank.",
-    "Incomplete Field: The 'Attorney State Bar Number' is missing in the caption."
-  ];
+  // NEW: Convert the C# pipeline string ("Warning 1|Warning 2") back into an array
+  const realWarnings = document?.warnings || document?.Warnings
+    ? (document.warnings || document.Warnings).split('|').filter(w => w.trim() !== '') 
+    : [];
 
-  // NEW: The Direct Download Function (Hits the C# Backend)
   const handleDownloadReport = async () => {
     try {
       setIsDownloading(true);
       
-      // 1. Call the future C# endpoint. We use 'blob' to tell Axios we expect a file, not text!
       const response = await api.get(`/documents/${document.id}/report/download`, {
         responseType: 'blob' 
       });
 
-      // 2. Create a hidden, temporary link in the browser to force the download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = window.document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${document.fileName || 'Legal_Document'}_AI_Report.pdf`);
+      link.setAttribute('download', `${document.fileName || document.FileName || 'Legal_Document'}_AI_Report.pdf`);
       
-      // 3. Click the invisible link, then destroy it
       window.document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -46,6 +42,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
       
       <div className="bg-white dark:bg-[#1f1f1f] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col transition-all overflow-hidden border border-gray-200 dark:border-gray-800">
         
+        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a]">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -65,77 +62,107 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
           </button>
         </div>
 
-        {/* Modal Body (Kept exactly the same as before!) */}
+        {/* Modal Body */}
         <div className="overflow-y-auto p-6 flex-1 bg-white dark:bg-[#1f1f1f]">
           <div className="bg-white dark:bg-[#1f1f1f] pb-4 px-2">
             
+            {/* 🔴 PRE-FLIGHT REJECTION WARNINGS */}
             <div className="mb-8 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10 rounded-xl overflow-hidden">
               <div className="bg-red-100 dark:bg-red-900/30 px-4 py-3 border-b border-red-200 dark:border-red-900/50 flex items-center gap-2">
                 <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 <h3 className="font-semibold text-red-800 dark:text-red-300">Pre-Flight Rejection Warnings</h3>
               </div>
               <ul className="p-4 space-y-2">
-                {mockWarnings.map((warning, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400">
-                    <span className="mt-0.5 text-red-500">•</span>
-                    {warning}
+                {/* DYNAMIC: Map over the real warnings from the AI */}
+                {realWarnings.length > 0 ? (
+                  realWarnings.map((warning, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400">
+                      <span className="mt-0.5 text-red-500">•</span>
+                      {warning}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-green-700 dark:text-green-400 font-medium">
+                    No critical issues detected by AI.
                   </li>
-                ))}
+                )}
               </ul>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
+              {/* 🏛 1. Setup & Categorization */}
               <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">1. Setup & Categorization</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Filing Type</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">Subsequent Filing <span className="text-xs font-normal text-gray-500 ml-1">(Case number detected)</span></p>
+                <div className="grid grid-cols-1 gap-4">
+                
+                  <div className="w-full bg-white dark:bg-[#282828] p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Case Title / Name</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseTitle || document.CaseTitle || 'Unknown'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Case Category</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">Unlimited <span className="text-xs font-normal text-gray-500 ml-1">(Demands exceed $35k)</span></p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Filing Type</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                        {document.filingType || document.FilingType || 'Unknown'}
+                        
+                        {/* NEW: If it's a subsequent filing, boldly inject the real Case Number! */}
+                        {(document.filingType === 'Subsequent Filing' || document.FilingType === 'Subsequent Filing') && 
+                         (document.caseNumber !== 'Missing' && document.CaseNumber !== 'Missing') && (
+                          <span className="text-xs font-bold text-gray-600 dark:text-gray-400 ml-1">
+                            ({document.caseNumber || document.CaseNumber})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Case Category</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseCategory || document.CaseCategory || 'Unknown'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Case Type</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseType || document.CaseType || 'Unknown'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Case Type</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">Breach of contract/warranty (06)</p>
-                  </div>
+                  
                 </div>
               </div>
 
+              {/* ⚖️ 2. Parties & Representation */}
               <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">2. Parties & Representation</h3>
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Filed By (On Behalf Of)</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">John Doe <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-[10px] px-2 py-0.5 rounded ml-2 uppercase">Plaintiff</span></p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.filedBy || document.FiledBy || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Refers To (As To)</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">Random Company Inc. <span className="bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] px-2 py-0.5 rounded ml-2 uppercase">Defendant</span></p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.refersTo || document.RefersTo || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Representation</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">John Doe Law Group, LLP</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.representation || document.Representation || 'Unknown'}</p>
                   </div>
                 </div>
               </div>
 
+              {/* 📑 3. Document Specifics */}
               <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a] md:col-span-2">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">3. Document Specifics</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">E-Filing Document Type</p>
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{document.documentTitle || document.DocumentTitle}</p>
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{document.eFilingDocType || document.EFilingDocType || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Exact Document Title</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate" title="SUMMONS">SUMMONS</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate" title={document.documentTitle || document.DocumentTitle}>{document.documentTitle || document.DocumentTitle || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Estimated Filing Fee</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">$0.00</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.estimatedFee || document.EstimatedFee || '$0.00'}</p>
                   </div>
                 </div>
               </div>
@@ -144,6 +171,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
           </div>
         </div>
         
+        {/* Footer Actions */}
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] flex justify-end gap-3">
           <button 
             onClick={onClose} 
@@ -153,7 +181,6 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
             Close
           </button>
           
-          {/* UPDATED: Download Report Button with a Download Icon! */}
           <button 
             onClick={handleDownloadReport}
             disabled={isDownloading}
@@ -169,7 +196,6 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
               </>
             ) : (
               <>
-                {/* Changed the icon to an arrow pointing down into a tray */}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Download Report
               </>

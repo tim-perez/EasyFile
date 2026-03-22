@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
 });
 
 // Register your custom services here!
-builder.Services.AddScoped<IAiReviewService, AiReviewService>();
+builder.Services.AddHttpClient<IAiReviewService, AiReviewService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>(); 
 builder.Services.AddScoped<ITextractService, TextractService>();
 

@@ -43,48 +43,115 @@ namespace EasyFile.Controllers
                 if (file == null || file.Length == 0)
                     return BadRequest(new { message = "No file uploaded." });
 
-                // 1. Keep track of the exact name the user uploaded (e.g. "SUM-100.pdf")
                 var originalFileName = file.FileName;
 
-                // 2. Upload to S3
+                // 1. Upload to S3
                 var fileKey = await _documentService.UploadDocumentAsync(file, userId);
 
-                // 3. Extract Text via AWS Textract
+                // 2. Extract Text via AWS Textract
                 using var fileStream = file.OpenReadStream();
                 var extractedText = await _textractService.ExtractTextAsync(fileStream);
 
-                // 4. Send text to AI and get JSON back
+                // ==========================================
+                // 🛑 GATEKEEPER 1: NON-TEXT SEARCHABLE CHECK
+                // ==========================================
+                // If Textract found almost no text, it's likely a blurry photo or a flattened image.
+                if (string.IsNullOrWhiteSpace(extractedText) || extractedText.Length < 50)
+                {
+                    Console.WriteLine("\n=== GATEKEEPER 1 TRIGGERED ===");
+                    Console.WriteLine($"File {originalFileName} failed text extraction.");
+
+                    var failedDocument = new Document
+                    {
+                        UploaderId = int.Parse(userId),
+                        FileName = originalFileName,
+                        DocumentTitle = "Non-Text Searchable", // Tell the user exactly what went wrong
+                        CaseNumber = "Missing",
+                        FileUrl = fileKey,
+                        FileType = file.ContentType,
+                        Status = "Failed", // This will make your React badge turn red!
+                        County = "Unknown"
+                    };
+
+                    _dbContext.Documents.Add(failedDocument);
+                    await _dbContext.SaveChangesAsync();
+
+                    // We return Ok so it still shows up in the user's table, but with the Failed status.
+                    return Ok(new { message = "Document saved, but flagged as non-text searchable.", documentId = failedDocument.Id });
+                }
+
+                // 3. Send text to AI and get JSON back
                 var aiReportJson = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
 
-                // 5. Safely Parse the JSON to grab the "Fill in the Blank" data
+                Console.WriteLine("\n=== OPENAI JSON RESPONSE ===");
+                Console.WriteLine(aiReportJson);
+                Console.WriteLine("=============================\n");
+
+                // 4. Safely Parse the JSON
                 using JsonDocument jsonDoc = JsonDocument.Parse(aiReportJson);
                 var root = jsonDoc.RootElement;
 
-                // TryGetProperty won't crash if the AI forgets a key! It just safely defaults to null.
-                var aiTitle = root.TryGetProperty("documentTitle", out var titleProp) ? titleProp.GetString() : "Unknown";
-                var aiCaseNumber = root.TryGetProperty("caseNumber", out var caseProp) ? caseProp.GetString() : "Missing";
                 var aiStatus = root.TryGetProperty("status", out var statusProp) ? statusProp.GetString() : "Processed";
+
+                // ==========================================
+                // 🛑 GATEKEEPER 2: NON-LEGAL DOCUMENT CHECK
+                // ==========================================
+                // If the AI flags this as an Amazon invoice or a dog picture...
+                if (aiStatus == "REJECT_NON_LEGAL_DOCUMENT")
+                {
+                    Console.WriteLine("\n=== GATEKEEPER 2 TRIGGERED ===");
+                    Console.WriteLine($"File {originalFileName} rejected by AI as non-legal.");
+
+                    // 1. Delete the junk file from AWS S3 immediately so you don't pay for storage
+                    await _documentService.DeleteDocumentAsync(fileKey);
+
+                    // 2. Return a 400 Bad Request to trigger the error alert in React
+                    return BadRequest(new { message = "Upload Failed: The uploaded file is not recognized as a valid legal document." });
+                }
+
+                // 5. Safely Parse all JSON fields
+                var aiTitle = root.TryGetProperty("documentTitle", out var titleProp) ? titleProp.GetString() : "Unknown";
+                var aiCaseTitle = root.TryGetProperty("caseTitle", out var caseTitleProp) ? caseTitleProp.GetString() : "Unknown";
+                var aiCaseNumber = root.TryGetProperty("caseNumber", out var caseProp) ? caseProp.GetString() : "Missing";
                 var aiCounty = root.TryGetProperty("county", out var countyProp) ? countyProp.GetString() : "Unknown";
+                
+                // NEW: E-Filing specific fields
+                var aiEFilingDocType = root.TryGetProperty("eFilingDocType", out var eTypeProp) ? eTypeProp.GetString() : "Unknown";
+                var aiEstimatedFee = root.TryGetProperty("estimatedFee", out var feeProp) ? feeProp.GetString() : "$0.00";
+                var aiFilingType = root.TryGetProperty("filingType", out var fTypeProp) ? fTypeProp.GetString() : "Unknown";
+                var aiCaseCategory = root.TryGetProperty("caseCategory", out var catProp) ? catProp.GetString() : "Unknown";
+                var aiCaseType = root.TryGetProperty("caseType", out var cTypeProp) ? cTypeProp.GetString() : "Unknown";
+                var aiFiledBy = root.TryGetProperty("filedBy", out var filedProp) ? filedProp.GetString() : "Unknown";
+                var aiRefersTo = root.TryGetProperty("refersTo", out var refersProp) ? refersProp.GetString() : "Unknown";
+                var aiRepresentation = root.TryGetProperty("representation", out var repProp) ? repProp.GetString() : "Unknown";
+                
+                // Convert warnings array to a single string for easy database storage
+                var aiWarnings = root.TryGetProperty("warnings", out var warnProp) && warnProp.ValueKind == JsonValueKind.Array 
+                    ? string.Join("|", warnProp.EnumerateArray().Select(w => w.GetString())) 
+                    : "";
 
-                // Print the exact data to your terminal
-                Console.WriteLine("\n=== AI EXTRACTION SUCCESS ===");
-                Console.WriteLine($"File Name Caught: {originalFileName}");
-                Console.WriteLine($"AI Document Title: {aiTitle}");
-                Console.WriteLine($"AI Case Number: {aiCaseNumber}");
-                Console.WriteLine($"AI County: {aiCounty ?? "Unknown"}");
-                Console.WriteLine("=============================\n");
-
-                // 6. Save EVERYTHING to SQL Server
                 var newDocument = new Document
                 {
                     UploaderId = int.Parse(userId),
-                    FileName = originalFileName,               
-                    DocumentTitle = aiTitle ?? "Unknown",      
-                    CaseNumber = aiCaseNumber ?? "Missing",    
-                    FileUrl = fileKey,                         
-                    FileType = file.ContentType,
+                    FileName = originalFileName ?? "Unknown_File.pdf",
+                    DocumentTitle = aiTitle ?? "Unknown",
+                    CaseTitle = aiCaseTitle ?? "Unknown",
+                    CaseNumber = aiCaseNumber ?? "Missing",
+                    FileUrl = fileKey ?? "Missing_URL",
+                    FileType = file.ContentType ?? "application/pdf",
                     Status = aiStatus ?? "Processed",
-                    County = aiCounty ?? "Unknown" // Use the variable here!
+                    County = aiCounty ?? "Unknown",
+                    
+                    // NEW: Save them to the database
+                    EFilingDocType = aiEFilingDocType ?? "Unknown",
+                    EstimatedFee = aiEstimatedFee ?? "$0.00",
+                    FilingType = aiFilingType ?? "Unknown",
+                    CaseCategory = aiCaseCategory ?? "Unknown",
+                    CaseType = aiCaseType ?? "Unknown",
+                    FiledBy = aiFiledBy ?? "Unknown",
+                    RefersTo = aiRefersTo ?? "Unknown",
+                    Representation = aiRepresentation ?? "Unknown",
+                    Warnings = aiWarnings
                 };
 
                 _dbContext.Documents.Add(newDocument);

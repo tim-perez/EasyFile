@@ -17,8 +17,19 @@ public class Document
     public string FileName { get; set; } = string.Empty;       // e.g., "SUM-100.pdf"
     public string DocumentTitle { get; set; } = "Processing..."; // e.g., "Summons"
     public string CaseNumber { get; set; } = "Processing...";    // e.g., "CV12345"
+    public string CaseTitle { get; set; } = "Processing...";     // e.g., "John Doe vs. Acme Corp."
 
     public string County { get; set; } = string.Empty;
+    
+    public string EFilingDocType { get; set; } = string.Empty;
+    public string EstimatedFee { get; set; } = string.Empty;
+    public string FilingType { get; set; } = string.Empty;
+    public string CaseCategory { get; set; } = string.Empty;
+    public string CaseType { get; set; } = string.Empty;
+    public string FiledBy { get; set; } = string.Empty;
+    public string RefersTo { get; set; } = string.Empty;
+    public string Representation { get; set; } = string.Empty;
+    public string Warnings { get; set; } = string.Empty; // We will save the array as a comma-separated string
 
     public string FileUrl { get; set; } = string.Empty;
     public string ReportUrl { get; set; } = string.Empty;

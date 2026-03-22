@@ -4,6 +4,7 @@ using EasyFile.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EasyFile.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322070000_AddCaseTitleColumn")]
+    partial class AddCaseTitleColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,19 +33,11 @@ namespace EasyFile.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CaseCategory")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CaseNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CaseTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CaseType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -57,14 +52,6 @@ namespace EasyFile.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DocumentTitle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EFilingDocType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EstimatedFee")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -83,26 +70,10 @@ namespace EasyFile.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FiledBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilingType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("Recycled")
                         .HasColumnType("bit");
 
-                    b.Property<string>("RefersTo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ReportUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Representation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -118,10 +89,6 @@ namespace EasyFile.Migrations
 
                     b.Property<int>("UploaderId")
                         .HasColumnType("int");
-
-                    b.Property<string>("Warnings")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
