@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../services/api';
 import DocumentReportModal from '../components/DocumentReportModal'; 
+import EditDocumentModal from './EditDocumentModal';
 
 export default function Documents() {
   const { onOpenUploadModal } = useOutletContext();
@@ -12,6 +13,59 @@ export default function Documents() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedReportDocument, setSelectedReportDocument] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // ==========================================
+  // BULK DOWNLOAD LOGIC
+  // ==========================================
+  const handleDownloadAllReports = async () => {
+    try {
+      // 1. Tell the API we expect a raw file ('blob') back
+      const response = await api.post(
+        '/documents/bulk-download/reports', 
+        { documentIds: selectedIds }, 
+        { responseType: 'blob' } 
+      );
+      
+      // 2. Create a temporary, hidden link to force the browser download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'EasyFile_Reports.zip');
+      document.body.appendChild(link);
+      link.click();
+      
+      // 3. Clean up
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download reports:", error);
+      alert("Failed to generate zip file. Please try again.");
+    }
+  };
+
+  const handleDownloadAllFiles = async () => {
+    try {
+      const response = await api.post(
+        '/documents/bulk-download/files', 
+        { documentIds: selectedIds }, 
+        { responseType: 'blob' }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'EasyFile_Originals.zip');
+      document.body.appendChild(link);
+      link.click();
+      
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download original files:", error);
+      alert("Failed to download files. Please try again.");
+    }
+  };
 
   useEffect(() => {
     fetchDocuments();
@@ -114,37 +168,62 @@ export default function Documents() {
     );
   };
 
+  // NEW: Convert the array of IDs into an array of full Document objects for the Edit Modal
+  const selectedDocumentObjects = documents.filter(doc => selectedIds.includes(doc.id));
+
   return (
     <div className="max-w-7xl mx-auto w-full relative">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Documents</h1>
 
       {/* NEW: SMOOTH ANIMATED ACTION BAR */}
-      {/* This uses max-height and opacity to slide open exactly like YouTube Studio */}
-      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedIds.length > 0 ? 'max-h-16 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
-        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg px-4 py-3 flex items-center justify-between">
+      {/* 1. Increased max-h from 16 to 40 to allow room for wrapping on small screens */}
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedIds.length > 0 ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
+        
+        {/* 2. Added flex-wrap and gap-4 to handle smaller screens gracefully */}
+        <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg px-4 py-3 flex flex-wrap lg:flex-nowrap items-center justify-between gap-4">
           
-          {/* Left Side: X Selected & Fake Dropdowns */}
-          <div className="flex items-center gap-6">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-300 dark:border-gray-700 pr-6">
-              {selectedIds.length} selected
+          {/* Left Side: X Selected & Dropdowns */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-100 dark:border-blue-800 w-full lg:w-auto">
+            
+            {/* 3. whitespace-nowrap prevents width-jumping during animation */}
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-400 whitespace-nowrap">
+              {selectedIds.length || 0} selected
             </span>
             
-            <button className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition">
-              Edit
-              <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </button>
+            <div className="hidden sm:block h-4 w-px bg-blue-200 dark:bg-blue-700"></div>
             
-            <button className="text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition">
-              More actions
-              <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            {/* EDIT BUTTON */}
+            <button 
+              onClick={() => setIsEditModalOpen(true)}
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap"
+            >
+              Edit
             </button>
+
+            {/* MORE ACTIONS DROPDOWN */}
+            <select 
+              onChange={(e) => {
+                if (e.target.value === 'reports') handleDownloadAllReports();
+                if (e.target.value === 'files') handleDownloadAllFiles();
+                e.target.value = ''; // Reset after selection
+              }}
+              className="text-sm bg-transparent font-medium text-gray-700 dark:text-gray-300 cursor-pointer outline-none hover:text-blue-600 dark:hover:text-blue-400 w-full sm:w-auto truncate"
+            >
+              <option value="" disabled selected>More Actions...</option>
+              <option value="reports">Download All Reports</option>
+              <option value="files">Download All Original Files</option>
+            </select>
           </div>
 
           {/* Right Side: Bulk Move to Recycle Bin */}
-          <button onClick={handleBulkDelete} className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition flex items-center gap-2">
+          <button 
+            onClick={handleBulkDelete} 
+            className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition flex items-center justify-center lg:justify-end gap-2 whitespace-nowrap w-full lg:w-auto lg:ml-auto"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             Move to Recycle Bin
           </button>
+          
         </div>
       </div>
 
@@ -155,70 +234,61 @@ export default function Documents() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-275">
-            
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              <div className="col-span-1 flex items-center justify-center">
-                {/* HEADER CHECKBOX */}
-                <input 
-                  type="checkbox" 
-                  className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" 
-                  checked={documents.length > 0 && selectedIds.length === documents.length}
-                  onChange={handleSelectAll}
-                />
-              </div>
-              <div className="col-span-2">File Name</div>
-              <div className="col-span-2">AI Document Title</div>
-              <div className="col-span-2">Case Number</div>
-              <div className="col-span-1">County</div>
-              <div className="col-span-1">Status</div>
-              <div className="col-span-1">Date</div>
-              <div className="col-span-2 text-right">Actions</div>
-            </div>
-
-            {isLoading && (
-              <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-            )}
-
-            {/* UPDATED: VISUAL EMPTY STATE WITH ACTION */}
-            {!isLoading && !error && documents.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 px-6 text-center border-2 border-dashed border-gray-100 dark:border-gray-800/50 rounded-lg mx-6 my-10 bg-gray-50 dark:bg-[#1a1a1a]">
-                
-                {/* 1. Sleek SVG Illustration (Matches the app's style) */}
-                <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 border-4 border-white dark:border-[#1f1f1f] shadow-lg">
-                    <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+      ) : error ? (
+        <div className="text-red-500 text-center py-10">{error}</div>
+      ) : documents.length === 0 ? (
+        /* FIXED: EMPTY STATE IS NOW OUTSIDE THE TABLE */
+        <div className="flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-[#1a1a1a]">
+          <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 shadow-sm">
+              <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No documents available</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm max-w-sm">
+            Your legal document vault is currently empty. Upload your first case filing or contract to begin the AI analysis.
+          </p>
+          <button 
+            onClick={onOpenUploadModal} 
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm uppercase tracking-wider flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Upload Documents
+          </button>
+        </div>
+      ) : (
+        /* TABLE STATE */
+        <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <div className="min-w-275">
+              
+              {/* TABLE HEADER */}
+              <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <div className="col-span-1 flex items-center justify-center">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" 
+                    checked={documents.length > 0 && selectedIds.length === documents.length}
+                    onChange={handleSelectAll}
+                  />
                 </div>
-                
-                {/* 2. Primary Text */}
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No documents available</h3>
-                
-                {/* 3. Helper Text */}
-                <p className="text-gray-500 dark:text-gray-400 mb-10 text-sm max-w-sm">
-                  Your legal document vault is currently empty. Upload your first case filing or contract to begin the AI analysis.
-                </p>
-
-                {/* 4. The Action Button */}
-                <button 
-                  onClick={onOpenUploadModal} 
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm uppercase tracking-wider flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                  Upload Documents
-                </button>
+                <div className="col-span-2">File Name</div>
+                <div className="col-span-2">AI Document Title</div>
+                <div className="col-span-2">Case Number</div>
+                <div className="col-span-1">County</div>
+                <div className="col-span-1">Status</div>
+                <div className="col-span-1">Date</div>
+                <div className="col-span-2 text-right">Actions</div>
               </div>
-            )}
 
-            {!isLoading && !error && documents.length > 0 && (
+              {/* TABLE ROWS */}
               <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {documents.map((doc) => (
                   <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-colors group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'}`}>
                     
                     <div className="col-span-1 flex items-center justify-center">
-                      {/* INDIVIDUAL ROW CHECKBOX */}
                       <input 
                         type="checkbox" 
                         className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
@@ -271,17 +341,26 @@ export default function Documents() {
                   </div>
                 ))}
               </div>
-            )}
-            
+              
+            </div>
           </div>
         </div>
-      </div>
-      {/* NEW: The Document Report Modal */}
+      )}
+
+      {/* MODALS */}
       <DocumentReportModal 
         isOpen={isReportModalOpen} 
         onClose={() => setIsReportModalOpen(false)} 
         document={selectedReportDocument} 
       />
+      
+      {/* FIXED: Passing the array of document objects, not just numbers! */}
+      <EditDocumentModal 
+           isOpen={isEditModalOpen}
+           onClose={() => setIsEditModalOpen(false)}
+           selectedDocs={selectedDocumentObjects}
+           onSuccess={fetchDocuments} 
+        />
     </div>
   );
 }

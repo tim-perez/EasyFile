@@ -19,6 +19,8 @@ public class Document
     public string CaseNumber { get; set; } = "Processing...";    // e.g., "CV12345"
     public string CaseTitle { get; set; } = "Processing...";     // e.g., "John Doe vs. Acme Corp."
 
+    public string Prediction { get; set; } = string.Empty; // "Likely Accepted" or "Likely Rejected"
+    
     public string County { get; set; } = string.Empty;
     
     public string EFilingDocType { get; set; } = string.Empty;
