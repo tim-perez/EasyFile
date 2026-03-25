@@ -208,8 +208,8 @@ const handleDeleteDocument = async (documentId) => {
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [documents, activeFilters, sortConfig]);
-
+  }, [documents, activeFilters, sortConfig, globalSearchQuery]);
+  
   // ==========================================
   // HELPERS
   // ==========================================
