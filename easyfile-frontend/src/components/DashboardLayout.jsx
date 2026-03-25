@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; 
 import logo from '../assets/EasyFileLogo3.png'; 
@@ -6,10 +6,21 @@ import UploadDocumentModal from './UploadDocumentModal';
 
 export default function DashboardLayout() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // Mobile search
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  
+  // NEW: Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // NEW: Menu States
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  // NEW: Refs for "Click Outside" logic
+  const searchRef = useRef(null);
+  const notifRef = useRef(null);
+  const profileRef = useRef(null);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -23,13 +34,75 @@ export default function DashboardLayout() {
     navigate('/login');
   };
 
+  // ==========================================
+  // DYNAMIC NOTIFICATIONS LOGIC
+  // ==========================================
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'Welcome to EasyFile!', time: 'Just now', unread: true },
+  ]);
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  };
+  const handleDeleteNotification = (id, event) => {
+    event.stopPropagation(); // Prevents the click from triggering other row actions
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleSearchSubmit = (e) => {
+    // Trigger if they press 'Enter' or if they click the dropdown button
+    if (e.key === 'Enter' || e.type === 'click') {
+      if (!searchQuery.trim()) return;
+      
+      setIsSearchFocused(false);
+      setIsSearchOpen(false); // Close mobile search overlay if open
+      
+      // Navigate to Documents tab and inject the query parameter
+      navigate(`/documents?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery(''); // Clear the top bar after searching
+    }
+  };
+
+  // Listen for the custom "documentProcessed" event
+  useEffect(() => {
+    const handleDocumentProcessed = (event) => {
+      const fileName = event.detail?.fileName || 'a new document';
+      const newNotif = {
+        id: Date.now(), // Generate a unique ID
+        text: `AI Report ready for ${fileName}`,
+        time: 'Just now',
+        unread: true
+      };
+      
+      // Add the new notification to the top of the list
+      setNotifications(prev => [newNotif, ...prev]);
+    };
+
+    window.addEventListener('documentProcessed', handleDocumentProcessed);
+    return () => window.removeEventListener('documentProcessed', handleDocumentProcessed);
+  }, []);
+
+  // NEW: "Click Outside" Listener
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) setIsSearchFocused(false);
+      if (notifRef.current && !notifRef.current.contains(event.target)) setIsNotificationsOpen(false);
+      if (profileRef.current && !profileRef.current.contains(event.target)) setIsProfileOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
       
       {/* ==================== TOP NAVIGATION ==================== */}
       <header className="relative h-16 shrink-0 flex items-center justify-between px-4 sm:px-6 border-b transition-colors duration-300 bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800 z-30">
         
-        {/* ==================== MOBILE SEARCH OVERLAY ==================== */}
+      {/* ==================== MOBILE SEARCH OVERLAY ==================== */}
         {isSearchOpen && (
           <div className="absolute inset-0 z-50 flex items-center bg-white dark:bg-[#1f1f1f] px-4 sm:px-6 w-full h-full">
             <button 
@@ -44,6 +117,9 @@ export default function DashboardLayout() {
               type="text" 
               autoFocus
               placeholder="Search across your workspace" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchSubmit} // <-- THE FIX IS RIGHT HERE
               className="w-full bg-transparent py-2 text-sm border-none focus:outline-none focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
@@ -66,9 +142,9 @@ export default function DashboardLayout() {
         </div>
 
         {/* Center: Search Bar */}
-        <div className="hidden md:flex flex-1 justify-center max-w-2xl px-4">
-          <div className="w-full relative flex items-center">
-            <div className="absolute left-4 text-gray-400">
+        <div className="hidden md:flex flex-1 justify-center max-w-2xl px-4 relative" ref={searchRef}>
+          <div className="w-full relative flex items-center group">
+            <div className="absolute left-4 text-gray-400 group-focus-within:text-blue-500 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -76,9 +152,29 @@ export default function DashboardLayout() {
             <input 
               type="text" 
               placeholder="Search across your workspace" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onKeyDown={handleSearchSubmit} // <-- ADD THIS
               className="w-full pl-12 pr-4 py-2 text-sm rounded-full border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500 dark:bg-[#121212] dark:border-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
+
+          {/* Search Results Dropdown */}
+          {isSearchFocused && searchQuery.length > 0 && (
+            <div className="absolute top-full mt-2 w-full max-w-2xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden z-50">
+              <div className="p-2">
+                <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Quick Results</p>
+                <button 
+                  onClick={handleSearchSubmit} // <-- ADD THIS
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-lg transition-colors flex items-center gap-3"
+                >
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Search documents for "{searchQuery}"
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Actions & Profile */}
@@ -96,62 +192,83 @@ export default function DashboardLayout() {
           </button>
 
           {/* Notifications Button */}
-          <div className="relative shrink-0">
+          <div className="relative shrink-0" ref={notifRef}>
             <button 
               onClick={() => {
                 setIsNotificationsOpen(!isNotificationsOpen);
-                setIsProfileOpen(false); // Close profile if open
+                setIsProfileOpen(false); 
               }}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent relative" 
               title="Notifications"
             >
               <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
+              {/* NEW: Unread Badge */}
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#1f1f1f]"></span>
+              )}
             </button>
-
-            {/* Invisible overlay to close on outside click */}
-            {isNotificationsOpen && (
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setIsNotificationsOpen(false)}
-              ></div>
-            )}
 
             {/* Notifications Dropdown */}
             {isNotificationsOpen && (
               <div className="absolute right-0 top-12 mt-1 w-[320px] bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 flex flex-col">
                 
-                {/* Header */}
-                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                {/* Header with Mark as Read Button */}
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-[#1f1f1f]">
                   <h3 className="font-medium text-gray-900 dark:text-white">Notifications</h3>
-                  {/* Settings gear icon common in YT Studio */}
-                  <button className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition">
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                     </svg>
-                  </button>
+                  {notifications.length > 0 && (
+                    <button 
+                      onClick={handleMarkAllAsRead} 
+                      className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline transition-colors"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
                 </div>
                 
-                {/* Empty State Body */}
-                <div className="flex flex-col items-center justify-center p-8 text-center min-h-55">
-                  {/* Large faded bell icon placeholder */}
-                  <svg className="w-24 h-24 text-gray-200 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    New notifications will show up here
-                  </p>
-                </div>
+                {/* Populated Notifications */}
+                <div className="max-h-96 overflow-y-auto">
+                  {notifications.length > 0 ? (
+                    notifications.map(notif => (
+                      // ADDED 'group' class here to handle the hover effect
+                      <div key={notif.id} className={`group px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#333333] cursor-pointer flex gap-3 items-start ${notif.unread ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}>
+                        <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${notif.unread ? 'bg-blue-500' : 'bg-transparent'}`}></div>
+                        
+                        <div className="flex-1 pr-2">
+                          <p className="text-sm text-gray-800 dark:text-gray-200">{notif.text}</p>
+                          <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                        </div>
 
+                        {/* NEW: The Delete Button (Hidden until hover) */}
+                        <button 
+                          onClick={(e) => handleDeleteNotification(notif.id, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                          title="Dismiss notification"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    // ... (keep your empty state exactly the same)
+                    <div className="flex flex-col items-center justify-center p-8 text-center min-h-55">
+                      <svg className="w-16 h-16 text-gray-200 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">You're all caught up!</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Do this for Upload button in the header */}
+          {/* Upload Button */}
           <button 
-            onClick={() => setIsUploadModalOpen(true)} // <-- Add this line right here!
+            onClick={() => setIsUploadModalOpen(true)}
             className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full font-medium text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-sm whitespace-nowrap ml-1"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +277,7 @@ export default function DashboardLayout() {
             Upload
           </button>
 
-          {/* CONDITIONAL RENDER: Guest vs Authenticated User */}
+          {/* User Profile */}
           {user?.isGuest ? (
             <button 
               onClick={() => navigate('/login')}
@@ -169,9 +286,12 @@ export default function DashboardLayout() {
               Login / Register
             </button>
           ) : (
-            <div className="relative ml-1 shrink-0">
+            <div className="relative ml-1 shrink-0" ref={profileRef}>
               <button 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                onClick={() => {
+                  setIsProfileOpen(!isProfileOpen);
+                  setIsNotificationsOpen(false);
+                }}
                 className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <img 
@@ -180,19 +300,10 @@ export default function DashboardLayout() {
                 />
               </button>
 
-              {/* Invisible overlay that closes the menu if you click anywhere else on the screen */}
-              {isProfileOpen && (
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsProfileOpen(false)}
-                ></div>
-              )}
-
-              {/* dropdown menu */}
+              {/* Profile Dropdown */}
               {isProfileOpen && (
                 <div className="absolute right-0 top-12 mt-1 w-75 bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 py-2">
                   
-                  {/* Account Identity Section */}
                   <div className="px-4 py-3 flex items-start gap-4 border-b border-gray-200 dark:border-gray-700 mb-2">
                     <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                       <img 
@@ -210,9 +321,14 @@ export default function DashboardLayout() {
                     </div>
                   </div>
 
-                  {/* Actions Section */}
                   <div className="flex flex-col">
-                    <button className="w-full px-4 py-2.5 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors">
+                    <button 
+                      onClick={() => {
+                        navigate('/account');
+                        setIsProfileOpen(false); 
+                      }}
+                      className="w-full px-4 py-2.5 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors"
+                    >
                       <svg className="w-6 h-6 text-gray-500 dark:text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -299,14 +415,12 @@ export default function DashboardLayout() {
           </nav>
         </aside>
 
-        {/* Main Content Area (Dynamic) */}
+        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 transition-colors duration-300 bg-gray-50 dark:bg-[#121212]">
-          {/* NEW: Pass the modal function down to any child component that needs it! */}
           <Outlet context={{ onOpenUploadModal: () => setIsUploadModalOpen(true) }} />
         </main>
       </div>
 
-      {/* NEW: Render the Modal at the top level of the layout */}
       <UploadDocumentModal 
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 

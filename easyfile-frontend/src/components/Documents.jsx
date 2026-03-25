@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import DocumentReportModal from '../components/DocumentReportModal'; 
 import EditDocumentModal from '../components/EditDocumentModal'; 
@@ -14,6 +14,8 @@ export default function Documents() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedReportDocument, setSelectedReportDocument] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const globalSearchQuery = searchParams.get('q') || '';
 
   // NEW: SORTING & FILTERING STATE
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' }); // Default: Latest date
@@ -146,11 +148,29 @@ const handleDeleteDocument = async (documentId) => {
   // 2. Apply Filters and Sorting to create the final array we render
   const processedDocuments = useMemo(() => {
     let filtered = documents.filter(doc => {
+      // 1. Dropdown Filters
       const matchTitle = !activeFilters.documentTitle || (doc.documentTitle || doc.DocumentTitle) === activeFilters.documentTitle;
       const matchCase = !activeFilters.caseNumber || (doc.caseNumber || doc.CaseNumber) === activeFilters.caseNumber;
       const matchCounty = !activeFilters.county || (doc.county || doc.County) === activeFilters.county;
       const matchStatus = !activeFilters.status || (doc.status || doc.Status) === activeFilters.status;
-      return matchTitle && matchCase && matchCounty && matchStatus;
+      const passesDropdowns = matchTitle && matchCase && matchCounty && matchStatus;
+
+      // 2. Global Search Bar Filter
+      let passesGlobalSearch = true;
+      if (globalSearchQuery) {
+        const q = globalSearchQuery.toLowerCase();
+        // Squish all searchable text into one giant string to easily search across everything
+        const searchableText = [
+          doc.fileName || doc.FileName,
+          doc.documentTitle || doc.DocumentTitle,
+          doc.caseNumber || doc.CaseNumber,
+          doc.county || doc.County
+        ].join(' ').toLowerCase();
+        
+        passesGlobalSearch = searchableText.includes(q);
+      }
+
+      return passesDropdowns && passesGlobalSearch;
     });
 
     return filtered.sort((a, b) => {
@@ -256,8 +276,9 @@ const handleDeleteDocument = async (documentId) => {
         </div>
       </div>
 
-      {/* FILTER BUTTON & PANEL */}
-      <div className="mb-4 px-2 relative">
+      {/* FILTER BUTTON, ACTIVE SEARCH BADGE, & DROPDOWN PANEL */}
+      <div className="mb-4 px-2 relative flex flex-wrap items-center gap-3 z-20">
+        
         <button 
           onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
           className={`flex items-center text-sm font-medium transition px-3 py-1.5 rounded-md ${isFilterMenuOpen || activeFilterCount > 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}
@@ -266,9 +287,26 @@ const handleDeleteDocument = async (documentId) => {
           Filter {activeFilterCount > 0 && `(${activeFilterCount})`}
         </button>
 
+        {/* Active Search Badge */}
+        {globalSearchQuery && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-md text-sm font-medium border border-blue-200 dark:border-blue-800 animate-fade-in">
+            <span>Search: "{globalSearchQuery}"</span>
+            <button 
+              onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                params.delete('q');
+                setSearchParams(params);
+              }}
+              className="p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+
         {/* EXPANDABLE FILTER PANEL */}
         {isFilterMenuOpen && (
-          <div className="absolute top-full left-0 mt-2 w-full max-w-4xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-4 z-20">
+          <div className="absolute top-full left-0 mt-2 w-full max-w-4xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-4 z-50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               
               <div>
@@ -358,8 +396,13 @@ const handleDeleteDocument = async (documentId) => {
               {/* TABLE ROWS - Now mapping over processedDocuments instead of documents */}
               <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {processedDocuments.map((doc) => (
-                  <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-colors group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'}`}>
-                    
+                  <div 
+                      key={doc.id} 
+                      className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group 
+                        ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'}
+                        ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20 shadow-inner' : ''}
+                      `}
+                    >                    
                     <div className="col-span-1 flex items-center justify-center">
                       <input 
                         type="checkbox" 

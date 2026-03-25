@@ -98,8 +98,15 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
 
       setTimeout(() => {
         setUploadState('success');
-        // NEW: Broadcast a global signal that a new document is ready!
+        
+        // 1. Your existing global signal to refresh the documents table
         window.dispatchEvent(new Event('documentUploaded')); 
+        
+        // 2. NEW: Trigger the specific notification with the file name attached!
+        window.dispatchEvent(new CustomEvent('documentProcessed', { 
+          detail: { fileName: file.name } 
+        }));
+        
       }, 500);
 
     } catch (error) {

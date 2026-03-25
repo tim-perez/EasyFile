@@ -7,6 +7,7 @@ import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './components/Dashboard';
 import Documents from './components/Documents';
 import RecycleBin from './components/RecycleBin';
+import Account from './components/Account';
 
 function App() {
     return (
@@ -24,6 +25,7 @@ function App() {
                             <Route path="dashboard" element={<Dashboard />} />
                             <Route path="documents" element={<Documents />} />
                             <Route path="recycle-bin" element={<RecycleBin />} />
+                            <Route path="account" element={<Account />} />
                         </Route>
                     </Route>
 
