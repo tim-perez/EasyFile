@@ -53,7 +53,7 @@ namespace EasyFile.Controllers
             user.FirstName = request.FirstName;
             user.LastName = request.LastName;
             user.BusinessName = request.BusinessName;
-            user.Email = request.Email;
+            if (request.Email != null) user.Email = request.Email;
             user.Phone = request.Phone;
 
             await _context.SaveChangesAsync();
@@ -99,8 +99,8 @@ namespace EasyFile.Controllers
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public string? BusinessName { get; set; }
-        public required string Email { get; set; }
         public string? Phone { get; set; }
+        public string? Email { get; set; }
     }
 
     public class UpdatePasswordDto

@@ -19,7 +19,7 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     
                     {/* Protected Routes */}
-                    <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin']} />}>
+                    <Route element={<ProtectedRoute allowedRoles={['Customer', 'Admin', 'Guest']} />}>
                         <Route path="/" element={<DashboardLayout />}>
                             <Route index element={<Navigate to="/dashboard" replace />} />
                             <Route path="dashboard" element={<Dashboard />} />

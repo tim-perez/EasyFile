@@ -53,6 +53,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddHttpClient<IAiReviewService, AiReviewService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>(); 
 builder.Services.AddScoped<ITextractService, TextractService>();
+builder.Services.AddHostedService<GuestCleanupService>(); // <-- This starts the background cleanup task when your server runs!
 
 // ==========================================
 // NEW: Force AWS to use the easyfile-backend user

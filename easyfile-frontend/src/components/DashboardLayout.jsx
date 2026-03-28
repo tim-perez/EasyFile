@@ -315,8 +315,10 @@ export default function DashboardLayout() {
                       <span className="font-medium text-base text-gray-900 dark:text-white truncate">
                         {user?.firstName} {user?.lastName}
                       </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                        {user?.role} Account
+                      <span className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-1.5">
+                        <span>{user?.role} Account</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                        <span>Account #{user?.id}</span>
                       </span>
                     </div>
                   </div>

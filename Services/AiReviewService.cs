@@ -33,7 +33,8 @@ EXCEPTION TO GATEKEEPER: If the text contains California pleading paper line num
 
 If it IS a legal document, extract the data and return a JSON object with EXACTLY these keys (do not omit any keys):
 - ""documentTitle"": The exact title of the document (e.g., 'SUMMONS', 'COMPLAINT', 'CIVIL CASE COVER SHEET').
-- ""eFilingDocType"": The generic e-filing category. CRITICAL RULE: If the documentTitle is short or standard (e.g., 'SUMMONS', 'JUDGMENT', 'COMPLAINT', 'ANSWER'), output that EXACT documentTitle here. ONLY genericize it if the title is long and complex (e.g., convert 'Plaintiff's Opposition to Defendant's Motion to Strike' into 'Opposition', or 'Declaration of John Doe in Support of...' into 'Declaration'). NEVER output 'Unknown' if you already know the documentTitle; just fall back to using the documentTitle.- ""estimatedFee"": Estimate the filing fee. Motions are typically $60. Stipulations/Orders are $20. Summons/Complaints vary but default to $435 for unlimited. If unknown, return ""$0.00"".
+- ""eFilingDocType"": The generic e-filing category. CRITICAL RULE: If the documentTitle is short or standard (e.g., 'SUMMONS', 'JUDGMENT', 'COMPLAINT', 'ANSWER'), output that EXACT documentTitle here. ONLY genericize it if the title is long and complex, and when you do, you MUST append "" (name extension)"" to the generic title. For example, convert 'Plaintiff's Opposition to Defendant's Motion to Strike' into 'Opposition (name extension)', or 'Declaration of John Doe in Support of...' into 'Declaration (name extension)'. NEVER output 'Unknown' if you already know the documentTitle; just fall back to using the documentTitle.
+- ""estimatedFee"": Estimate the filing fee. Motions are typically $60. Stipulations/Orders are $20. Summons/Complaints vary but default to $435 for unlimited. If unknown, return ""$0.00"".
 - ""caseTitle"": The full case name or title. If missing, return ""Unknown"".
 - ""caseNumber"": The official court case number. If missing, return """".
 - ""county"": The county court jurisdiction (e.g., 'Los Angeles'). If missing, return ""Unknown"".
@@ -52,7 +53,6 @@ If it IS a legal document, extract the data and return a JSON object with EXACTL
   If there are no warnings, return an empty array [].
 
 Output ONLY valid raw JSON. Do NOT include markdown formatting, backticks (```), or explanations.";
-
             // 2. Build the request payload for OpenAI (Using GPT-4o-mini to save you money while remaining incredibly smart!)
             var requestBody = new
             {

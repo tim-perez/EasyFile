@@ -26,9 +26,19 @@ export default function Login() {
     }
   };
 
-  const handleGuestLogin = () => {
-    loginAsGuest();
-    navigate('/dashboard');
+  // 1. Make sure 'async' is here
+  const handleGuestLogin = async (e) => { 
+    e.preventDefault(); // Prevents the page from refreshing 
+
+    try {
+      // 2. Make sure 'await' is here so React STOPS and waits for the database!
+      await loginAsGuest(); 
+      
+      // 3. Only navigate AFTER the login is completely finished
+      navigate('/dashboard'); 
+    } catch (error) {
+      console.error("Guest login failed", error);
+    }
   };
 
   return (

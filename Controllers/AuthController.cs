@@ -65,10 +65,12 @@ namespace EasyFile.Controllers
             var token = GenerateJwtToken(user);
 
             return Ok(new { 
+                id = user.Id,
                 token = token, 
                 role = user.AccountType,
                 firstName = user.FirstName,
                 lastName = user.LastName,
+                email = user.Email,
                 message = "Login successful."
             });
         }
@@ -82,7 +84,7 @@ namespace EasyFile.Controllers
             var guestUser = new User 
             { 
                 Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@easyfile.com",
-                AccountType = "Customer", // Keeps your React UI happy
+                AccountType = "Guest", // <-- Changed from "Customer" to "Guest"
                 FirstName = "Guest",
                 LastName = "User",
                 PasswordHash = "" 
@@ -96,10 +98,12 @@ namespace EasyFile.Controllers
             var token = GenerateJwtToken(guestUser);
 
             return Ok(new { 
+                id = guestUser.Id, // <-- This is the REAL database ID now!
                 token = token, 
                 role = guestUser.AccountType, 
                 firstName = guestUser.FirstName, 
                 lastName = guestUser.LastName,
+                email = guestUser.Email,
                 message = "Guest login successful."
             });
         }

@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 
 export default function Account() {
-  const { user } = useContext(AuthContext); 
+  const { user, updateUserContext } = useContext(AuthContext); 
 
   // State for Personal Info Form (Expanded to match Register.jsx)
   const [profileData, setProfileData] = useState({
@@ -68,7 +68,9 @@ export default function Account() {
         email: profileData.email,
         phone: profileData.phone
       });
-      
+
+      updateUserContext(profileData.firstName, profileData.lastName, profileData.email);
+
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' });
       
       // If your AuthContext has a way to update the current user session (like a reload user function), call it here:

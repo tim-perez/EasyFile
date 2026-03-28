@@ -10,7 +10,7 @@ export default function Dashboard() {
     console.log('User role from context:', role); // Debugging line to check the role value
 
     // Conditional Routing based on RBAC
-    if (role === 'Customer') {
+    if (role === 'Customer' || role === 'Guest') {
         return <CustomerPortal />;
     } 
 

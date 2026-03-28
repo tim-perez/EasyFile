@@ -39,13 +39,28 @@ namespace EasyFile.Controllers
         // ==========================================
         // 1. UPLOAD AND EXTRACT DATA
         // ==========================================
-        [HttpPost("upload")]
+        [HttpPost("upload")] // <--- ADD THIS LINE BACK!
+        [Microsoft.AspNetCore.Authorization.Authorize]
+
         public async Task<IActionResult> UploadDocument(IFormFile file, [FromForm] string userId)
         {
             try
             {
                 if (file == null || file.Length == 0)
                     return BadRequest(new { message = "No file uploaded." });
+
+                // ==========================================
+                // 🛑 NEW GATEKEEPER: GUEST UPLOAD LIMIT
+                // ==========================================
+                var userRecord = await _dbContext.Users.FindAsync(int.Parse(userId));
+                if (userRecord != null && userRecord.AccountType == "Guest")
+                {
+                    var currentDocCount = await _dbContext.Documents.CountAsync(d => d.UploaderId == userRecord.Id);
+                    if (currentDocCount >= 5)
+                    {
+                        return StatusCode(403, new { message = "Guest limit reached. Please register for a free account to upload more documents." });
+                    }
+                }
 
                 var originalFileName = file.FileName;
 
@@ -176,12 +191,17 @@ namespace EasyFile.Controllers
         // 2. GET ALL DOCUMENTS FOR THE TABLE
         // ==========================================
         [HttpGet]
+        [Microsoft.AspNetCore.Authorization.Authorize] // <-- 1. Require a valid login token
         public async Task<IActionResult> GetDocuments()
         {
             try
             {
+                // 2. Extract the specific user's ID from their token
+                var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
                 var documents = await _dbContext.Documents
-                    .Where(d => d.Recycled == false) // NEW: Hide recycled documents!
+                    .Where(d => d.Recycled == false && d.UploaderId == userId) // <-- 3. THE FIX: Filter by their ID!
                     .OrderByDescending(d => d.CreatedAt)
                     .ToListAsync();
                     
@@ -197,6 +217,7 @@ namespace EasyFile.Controllers
         // 3. GET SECURE AWS LINK FOR VIEWING
         // ==========================================
         [HttpGet("{id}/url")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> GetDocumentUrl(int id)
         {
             try
@@ -219,6 +240,7 @@ namespace EasyFile.Controllers
         // 4. SOFT DELETE A DOCUMENT
         // ==========================================
         [HttpDelete("{id}")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> DeleteDocument(int id)
         {
             try
@@ -245,13 +267,18 @@ namespace EasyFile.Controllers
         // 5. GET RECYCLED DOCUMENTS
         // ==========================================
         [HttpGet("recycle")]
+        [Microsoft.AspNetCore.Authorization.Authorize] // <-- 1. Require a valid login token
         public async Task<IActionResult> GetRecycledDocuments()
         {
             try
             {
+                // 2. Extract the specific user's ID from their token
+                var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
                 var documents = await _dbContext.Documents
-                    .Where(d => d.Recycled == true) // ONLY grab the recycled ones!
-                    .OrderByDescending(d => d.DeletedAt) // Order by when they were deleted
+                    .Where(d => d.Recycled == true && d.UploaderId == userId) // <-- 3. THE FIX: Filter by their ID!
+                    .OrderByDescending(d => d.DeletedAt)
                     .ToListAsync();
                     
                 return Ok(documents);
@@ -266,6 +293,7 @@ namespace EasyFile.Controllers
         // 6. RESTORE A DOCUMENT
         // ==========================================
         [HttpPost("{id}/restore")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> RestoreDocument(int id)
         {
             try
@@ -291,6 +319,7 @@ namespace EasyFile.Controllers
         // 7. PERMANENTLY DELETE A DOCUMENT (The Shredder)
         // ==========================================
         [HttpDelete("{id}/permanent")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> HardDeleteDocument(int id)
         {
             try
@@ -321,6 +350,7 @@ namespace EasyFile.Controllers
         }
 
         [HttpGet("{id}/report/download")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> DownloadReport(int id)
         {
             try
