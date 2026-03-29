@@ -35,17 +35,11 @@ namespace EasyFile.Services
 
                     foreach (var guest in expiredGuests)
                     {
-                        // 2. Delete all their files from AWS S3 first
-                        foreach (var doc in guest.UploadedDocuments)
-                        {
-                            try {
-                                await documentService.DeleteDocumentAsync(doc.FileUrl);
-                            } catch (Exception ex) {
-                                Console.WriteLine($"Failed to delete S3 file for expired guest: {ex.Message}");
-                            }
-                        }
+                        // 1. NUKE THE ENTIRE S3 FOLDER FOR THIS USER
+                        // This guarantees no orphaned files, even if the SQL document rows were already deleted!
+                        await documentService.DeleteUserFolderAsync(guest.Id.ToString());
                         
-                        // 3. Delete the guest from the SQL database (which automatically deletes their SQL document records)
+                        // 2. Delete the guest from the SQL database
                         dbContext.Users.Remove(guest);
                     }
 

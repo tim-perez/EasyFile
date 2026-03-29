@@ -33,17 +33,7 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
   // --- 1. File Selection & Validation ---
   const handleFileSelect = (file) => {
     if (!file) return;
-
-    // Check Guest Limits
-    if (user?.isGuest) {
-      const currentCount = parseInt(localStorage.getItem('guestDocCount') || '0', 10);
-      if (currentCount >= 5) {
-        setErrorMessage("Guest limit reached. Please register for a free account to upload more documents.");
-        setUploadState('error');
-        return;
-      }
-    }
-
+    
     // Ensure it's a PDF or Image
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
     if (!validTypes.includes(file.type)) {
@@ -90,11 +80,6 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
       clearInterval(progressInterval);
       setProgress(100);
       setStatusText('Scan Complete!');
-      
-      if (user?.isGuest) {
-        const currentCount = parseInt(localStorage.getItem('guestDocCount') || '0', 10);
-        localStorage.setItem('guestDocCount', (currentCount + 1).toString());
-      }
 
       setTimeout(() => {
         setUploadState('success');

@@ -8,5 +8,6 @@ namespace EasyFile.Interfaces
         Task<string> UploadDocumentAsync(IFormFile file, string userId);
         Task<string> GetDocumentPresignedUrlAsync(string fileKey);
         Task DeleteDocumentAsync(string fileKey);
+        Task DeleteUserFolderAsync(string userId);
     }
 }

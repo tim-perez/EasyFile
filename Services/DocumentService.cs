@@ -57,5 +57,35 @@ namespace EasyFile.Services
 
             await _s3Client.DeleteObjectAsync(deleteRequest);
         }
+        public async Task DeleteUserFolderAsync(string userId)
+        {
+            try 
+            {
+                // 1. Tell AWS to find all files that start with this user's specific folder path
+                var listRequest = new Amazon.S3.Model.ListObjectsV2Request
+                {
+                    BucketName = BucketName,
+                    Prefix = $"uploads/{userId}/"
+                };
+
+                var listResponse = await _s3Client.ListObjectsV2Async(listRequest);
+
+                // 2. Loop through and delete every single file found in that folder
+                foreach (var s3Object in listResponse.S3Objects)
+                {
+                    var deleteRequest = new Amazon.S3.Model.DeleteObjectRequest
+                    {
+                        BucketName = BucketName,
+                        Key = s3Object.Key
+                    };
+
+                    await _s3Client.DeleteObjectAsync(deleteRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to delete S3 folder for User {userId}: {ex.Message}");
+            }
+        }
     }
 }

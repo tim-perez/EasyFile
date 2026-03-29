@@ -47,7 +47,12 @@ export const AuthProvider = ({ children }) => {
     const loginAsGuest = async () => {
         try {
             setLoading(true);
-            const response = await api.post('/auth/guest-login');
+            
+            // 1. Check if this browser already has a saved guest identity
+            const savedGuestEmail = localStorage.getItem('persistentGuestEmail');
+            
+            // 2. Send it to the backend (it will be null if they are brand new)
+            const response = await api.post('/auth/guest-login', { guestEmail: savedGuestEmail });
             
             const { id, token, role, firstName, lastName, email } = response.data;
             
@@ -59,9 +64,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('email', email);
             localStorage.setItem('isGuest', 'true');
             
-            if (!localStorage.getItem('guestDocCount')) {
-                localStorage.setItem('guestDocCount', '0');
-            }
+            // 3. THE MAGIC: Save their guest email permanently to the browser!
+            localStorage.setItem('persistentGuestEmail', email);
 
             setUser({ id, token, role, firstName, lastName, email, isGuest: true });
         } catch (error) {
@@ -71,15 +75,19 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // ==========================================
+    // ADDED BACK: Update Context Function
+    // ==========================================
     const updateUserContext = (newFirstName, newLastName, newEmail) => {
         localStorage.setItem('firstName', newFirstName);
         localStorage.setItem('lastName', newLastName);
         localStorage.setItem('email', newEmail);
-        localStorage.setItem('id', localStorage.getItem('id'));
         setUser(prev => ({ ...prev, firstName: newFirstName, lastName: newLastName, email: newEmail }));
     };
 
-    // THIS WAS THE MISSING FUNCTION!
+    // ==========================================
+    // ADDED BACK: Logout Function
+    // ==========================================
     const logout = () => {
         localStorage.removeItem('id');
         localStorage.removeItem('jwtToken');
@@ -88,6 +96,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('firstName');
         localStorage.removeItem('lastName');
         localStorage.removeItem('email');
+        // Notice we do NOT remove 'persistentGuestEmail' here!
         setUser(null);
     };
 

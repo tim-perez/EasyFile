@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import DocumentReportModal from '../components/DocumentReportModal'; 
 import EditDocumentModal from '../components/EditDocumentModal'; 
 
 export default function Documents() {
+  const { user } = useContext(AuthContext);
   const { onOpenUploadModal } = useOutletContext();
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -269,10 +271,13 @@ const handleDeleteDocument = async (documentId) => {
               <option value="files">Download All Original Files</option>
             </select>
           </div>
-          <button onClick={handleBulkDelete} className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition flex items-center justify-center lg:justify-end gap-2 whitespace-nowrap w-full lg:w-auto lg:ml-auto">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            Move to Recycle Bin
-          </button>
+          {/* ONLY show bulk delete if NOT a Guest */}
+          {user?.role !== 'Guest' && (
+            <button onClick={handleBulkDelete} className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition flex items-center justify-center lg:justify-end gap-2 whitespace-nowrap w-full lg:w-auto lg:ml-auto">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              Move to Recycle Bin
+            </button>
+          )}
         </div>
       </div>
 
@@ -440,9 +445,18 @@ const handleDeleteDocument = async (documentId) => {
 
                     <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium whitespace-nowrap">View Report</button>
-                      <button onClick={() => handleDeleteDocument(doc.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20" title="Move to Recycle Bin">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      {/* ONLY render the delete button if the user is NOT a Guest */}
+                      {user?.role !== 'Guest' && (
+                        <button 
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
+                          title="Move to Recycle Bin"
+                        >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        </button>
+                      )}
                     </div>
 
                   </div>

@@ -75,30 +75,40 @@ namespace EasyFile.Controllers
             });
         }
         // ==========================================
-        // NEW: Real Guest User Database Registration
+        // PERSISTENT GUEST LOGIN
         // ==========================================
         [HttpPost("guest-login")]
-        public async Task<IActionResult> GuestLogin() // <-- Notice we added 'async Task' here!
+        public async Task<IActionResult> GuestLogin([FromBody] GuestRequestDto request) 
         {
-            // 1. Create a real user object with a randomized guest email
-            var guestUser = new User 
-            { 
-                Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@easyfile.com",
-                AccountType = "Guest", // <-- Changed from "Customer" to "Guest"
-                FirstName = "Guest",
-                LastName = "User",
-                PasswordHash = "" 
-            };
+            User guestUser = null;
 
-            // 2. Officially save them to the database so SQL Server assigns a REAL ID!
-            _dbContext.Users.Add(guestUser);
-            await _dbContext.SaveChangesAsync();
+            // 1. If React sent a saved email, try to find their active guest account!
+            if (!string.IsNullOrEmpty(request?.GuestEmail))
+            {
+                guestUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.GuestEmail && u.AccountType == "Guest");
+            }
 
-            // 3. Generate the token using the newly approved database ID
+            // 2. If they are brand new, OR if the 24-hour janitor deleted their old account, create a new one.
+            if (guestUser == null)
+            {
+                guestUser = new User 
+                { 
+                    Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@easyfile.com",
+                    AccountType = "Guest", 
+                    FirstName = "Guest",
+                    LastName = "User",
+                    PasswordHash = "" 
+                };
+
+                _dbContext.Users.Add(guestUser);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            // 3. Generate the token for whichever account we just found/created
             var token = GenerateJwtToken(guestUser);
 
             return Ok(new { 
-                id = guestUser.Id, // <-- This is the REAL database ID now!
+                id = guestUser.Id, 
                 token = token, 
                 role = guestUser.AccountType, 
                 firstName = guestUser.FirstName, 
@@ -131,6 +141,10 @@ namespace EasyFile.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public class GuestRequestDto
+        {
+            public string? GuestEmail { get; set; }
         }
     }
 }
