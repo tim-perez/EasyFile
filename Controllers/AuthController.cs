@@ -80,7 +80,7 @@ namespace EasyFile.Controllers
         [HttpPost("guest-login")]
         public async Task<IActionResult> GuestLogin([FromBody] GuestRequestDto request) 
         {
-            User guestUser = null;
+            User? guestUser = null;
 
             // 1. If React sent a saved email, try to find their active guest account!
             if (!string.IsNullOrEmpty(request?.GuestEmail))

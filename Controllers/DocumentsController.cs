@@ -191,19 +191,28 @@ namespace EasyFile.Controllers
         // 2. GET ALL DOCUMENTS FOR THE TABLE
         // ==========================================
         [HttpGet]
-        [Microsoft.AspNetCore.Authorization.Authorize] // <-- 1. Require a valid login token
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> GetDocuments()
         {
             try
             {
-                // 2. Extract the specific user's ID from their token
                 var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
-                var documents = await _dbContext.Documents
-                    .Where(d => d.Recycled == false && d.UploaderId == userId) // <-- 3. THE FIX: Filter by their ID!
-                    .OrderByDescending(d => d.CreatedAt)
-                    .ToListAsync();
+                // 1. Grab the user's role from their token
+                var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                // 2. Start the base query (hide recycled ones)
+                var query = _dbContext.Documents.Where(d => d.Recycled == false);
+
+                // 3. THE ADMIN BYPASS: If they are NOT an Admin, lock the query to their ID
+                if (userRole != "Admin")
+                {
+                    query = query.Where(d => d.UploaderId == userId);
+                }
+
+                // 4. Execute the query
+                var documents = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
                     
                 return Ok(documents);
             }
@@ -267,19 +276,24 @@ namespace EasyFile.Controllers
         // 5. GET RECYCLED DOCUMENTS
         // ==========================================
         [HttpGet("recycle")]
-        [Microsoft.AspNetCore.Authorization.Authorize] // <-- 1. Require a valid login token
+        [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<IActionResult> GetRecycledDocuments()
         {
             try
             {
-                // 2. Extract the specific user's ID from their token
                 var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
-                var documents = await _dbContext.Documents
-                    .Where(d => d.Recycled == true && d.UploaderId == userId) // <-- 3. THE FIX: Filter by their ID!
-                    .OrderByDescending(d => d.DeletedAt)
-                    .ToListAsync();
+                var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                var query = _dbContext.Documents.Where(d => d.Recycled == true);
+
+                if (userRole != "Admin")
+                {
+                    query = query.Where(d => d.UploaderId == userId);
+                }
+
+                var documents = await query.OrderByDescending(d => d.DeletedAt).ToListAsync();
                     
                 return Ok(documents);
             }
