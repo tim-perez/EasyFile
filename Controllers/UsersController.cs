@@ -1,10 +1,12 @@
-using EasyFile.Models;
-using EasyFile.Data;
-using Microsoft.AspNetCore.Http;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using Microsoft.Extensions.Logging;
+using EasyFile.Data;
 using EasyFile.Interfaces;
 
 namespace EasyFile.Controllers
@@ -13,182 +15,191 @@ namespace EasyFile.Controllers
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        private readonly IDocumentService _documentService; // <-- Add this
+        private readonly AppDbContext _dbContext;
+        private readonly IDocumentService _documentService;
+        private readonly ILogger<UsersController> _logger;
 
-        // <-- Update constructor
-        public UsersController(AppDbContext context, IDocumentService documentService) 
+        public UsersController(
+            AppDbContext dbContext, 
+            IDocumentService documentService,
+            ILogger<UsersController> logger) 
         {
-            _context = context;
+            _dbContext = dbContext;
             _documentService = documentService;
+            _logger = logger;
         }
 
-        // --- Existing Endpoints ---
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
-        {
-            return await _context.Users.ToListAsync();
-        }
-        
-        [HttpPost]
-        public async Task<ActionResult<User>> CreateUser(User user)
-        {
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
-        }
-
-        // ==========================================
-        // NEW: PROFILE UPDATE ENDPOINT
-        // ==========================================
         [Authorize]
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto request)
         {
-            // Extract the User ID from the secure JWT token
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+            try
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
-            // Find the user in the database
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound(new { message = "User not found." });
+                var user = await _dbContext.Users.FindAsync(userId);
+                if (user == null) return NotFound(new { message = "User not found." });
 
-            // Update the allowed fields
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.BusinessName = request.BusinessName;
-            if (request.Email != null) user.Email = request.Email;
-            user.Phone = request.Phone;
+                user.FirstName = request.FirstName;
+                user.LastName = request.LastName;
+                user.BusinessName = request.BusinessName;
+                if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
+                user.Phone = request.Phone;
 
-            await _context.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync();
 
-            return Ok(new { message = "Profile updated successfully." });
+                return Ok(new { message = "Profile updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update profile for user.");
+                return StatusCode(500, new { message = "An error occurred while updating the profile." });
+            }
         }
 
-        // ==========================================
-        // NEW: PASSWORD UPDATE ENDPOINT
-        // ==========================================
         [Authorize]
         [HttpPut("password")]
         public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordDto request)
         {
-            // Extract the User ID from the secure JWT token
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
-
-            // Find the user in the database
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) return NotFound(new { message = "User not found." });
-
-            // Verify the current password using BCrypt
-            bool isCurrentPasswordValid = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash);
-            if (!isCurrentPasswordValid)
+            try
             {
-                return BadRequest(new { message = "Incorrect current password." });
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+                var user = await _dbContext.Users.FindAsync(userId);
+                if (user == null) return NotFound(new { message = "User not found." });
+
+                bool isCurrentPasswordValid = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash);
+                if (!isCurrentPasswordValid)
+                {
+                    return BadRequest(new { message = "Incorrect current password." });
+                }
+
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                await _dbContext.SaveChangesAsync();
+
+                return Ok(new { message = "Password updated successfully." });
             }
-
-            // Hash the new password and save
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Password updated successfully." });
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update password for user.");
+                return StatusCode(500, new { message = "An error occurred while updating the password." });
+            }
         }
 
-        // ==========================================
-        // ADMIN: GET ALL USERS
-        // ==========================================
         [HttpGet("all")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers()
         {
-            // We omit the PasswordHash so it never travels over the network
-            var users = await _context.Users
-                .Select(u => new { 
-                    u.Id, u.FirstName, u.LastName, u.Email, u.AccountType, u.BusinessName, u.Phone, u.CreatedAt
-                })
-                .OrderByDescending(u => u.CreatedAt)
-                .ToListAsync();
-                
-            return Ok(users);
+            try
+            {
+                var users = await _dbContext.Users
+                    .Select(u => new { 
+                        u.Id, u.FirstName, u.LastName, u.Email, u.AccountType, u.BusinessName, u.Phone, u.CreatedAt
+                    })
+                    .OrderByDescending(u => u.CreatedAt)
+                    .ToListAsync();
+                    
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve user list.");
+                return StatusCode(500, new { message = "An error occurred while retrieving users." });
+            }
         }
 
-        // ==========================================
-        // ADMIN: UPDATE USER DETAILS
-        // ==========================================
         [HttpPut("admin-update/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminUpdateUser(int id, [FromBody] AdminUpdateUserDto request)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound(new { message = "User not found." });
+            try
+            {
+                var user = await _dbContext.Users.FindAsync(id);
+                if (user == null) return NotFound(new { message = "User not found." });
 
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.BusinessName = request.BusinessName;
-            user.Email = request.Email;
-            user.Phone = request.Phone;
-            user.AccountType = request.AccountType;
+                user.FirstName = request.FirstName;
+                user.LastName = request.LastName;
+                user.BusinessName = request.BusinessName;
+                user.Email = request.Email;
+                user.Phone = request.Phone;
+                user.AccountType = request.AccountType;
 
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "User updated successfully." });
+                await _dbContext.SaveChangesAsync();
+                return Ok(new { message = "User updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Admin failed to update user {UserId}.", id);
+                return StatusCode(500, new { message = "An error occurred while updating the user." });
+            }
         }
 
-        // ==========================================
-        // ADMIN: FORCE PASSWORD RESET
-        // ==========================================
         [HttpPut("admin-reset-password/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminResetPassword(int id, [FromBody] AdminResetPasswordDto request)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound(new { message = "User not found." });
+            try
+            {
+                var user = await _dbContext.Users.FindAsync(id);
+                if (user == null) return NotFound(new { message = "User not found." });
 
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _context.SaveChangesAsync();
-            
-            return Ok(new { message = "Password forced reset successfully." });
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                await _dbContext.SaveChangesAsync();
+                
+                return Ok(new { message = "Password forced reset successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Admin failed to reset password for user {UserId}.", id);
+                return StatusCode(500, new { message = "An error occurred while resetting the password." });
+            }
         }
 
-        // ==========================================
-        // ADMIN: BAN / DEACTIVATE USER
-        // ==========================================
         [HttpPut("admin-ban/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminBanUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound(new { message = "User not found." });
+            try
+            {
+                var user = await _dbContext.Users.FindAsync(id);
+                if (user == null) return NotFound(new { message = "User not found." });
 
-            // Instead of deleting, we simply change their role so they can never log in again, 
-            // but all their documents and data remain safely in your database!
-            user.AccountType = "Banned";
-            await _context.SaveChangesAsync();
+                user.AccountType = "Banned";
+                await _dbContext.SaveChangesAsync();
 
-            return Ok(new { message = "User has been deactivated successfully." });
+                return Ok(new { message = "User has been deactivated successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Admin failed to ban user {UserId}.", id);
+                return StatusCode(500, new { message = "An error occurred while deactivating the user." });
+            }
         }
 
-        // ==========================================
-        // ADMIN: UNBAN / REACTIVATE USER
-        // ==========================================
         [HttpPut("admin-unban/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminUnbanUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound(new { message = "User not found." });
+            try
+            {
+                var user = await _dbContext.Users.FindAsync(id);
+                if (user == null) return NotFound(new { message = "User not found." });
 
-            // Restore them to standard Customer status so they can log in again
-            user.AccountType = "Customer";
-            await _context.SaveChangesAsync();
+                user.AccountType = "Customer";
+                await _dbContext.SaveChangesAsync();
 
-            return Ok(new { message = "User has been reactivated successfully." });
+                return Ok(new { message = "User has been reactivated successfully." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Admin failed to unban user {UserId}.", id);
+                return StatusCode(500, new { message = "An error occurred while reactivating the user." });
+            }
         }
     }
 
-    // ==========================================
-    // DATA TRANSFER OBJECTS (DTOs)
-    // ==========================================
     public class UpdateProfileDto
     {
         public required string FirstName { get; set; }
