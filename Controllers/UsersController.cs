@@ -1,11 +1,9 @@
-using System;
-using System.Linq;
-using System.Security.Claims;
+using System.IO;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models.DTOs;

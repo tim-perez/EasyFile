@@ -1,20 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.IO.Compression;
-using System.Linq;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models.DTOs;
@@ -30,6 +21,7 @@ namespace EasyFile.Controllers
         private readonly IDocumentService _documentService;
         private readonly ITextractService _textractService;
         private readonly IAiReviewService _aiReviewService;
+        private readonly IPdfReportService _pdfReportService;
         private readonly ILogger<DocumentsController> _logger;
 
         public DocumentsController(
@@ -37,12 +29,14 @@ namespace EasyFile.Controllers
             IDocumentService documentService,
             ITextractService textractService,
             IAiReviewService aiReviewService,
+            IPdfReportService pdfReportService,
             ILogger<DocumentsController> logger)
         {
             _dbContext = dbContext;
             _documentService = documentService;
             _textractService = textractService;
             _aiReviewService = aiReviewService;
+            _pdfReportService = pdfReportService;
             _logger = logger;
         }
 
@@ -297,7 +291,7 @@ namespace EasyFile.Controllers
                 var document = await _dbContext.Documents.FindAsync(id);
                 if (document == null) return NotFound(new { message = "Document not found." });
 
-                var pdfBytes = GenerateReportPdfBytes(document);
+                var pdfBytes = _pdfReportService.GenerateReport(document);
                 var sanitizedFileName = $"{document.FileName ?? "Legal_Document"}_AI_Report.pdf";
                 
                 return File(pdfBytes, "application/pdf", sanitizedFileName);
@@ -358,7 +352,8 @@ namespace EasyFile.Controllers
                 {
                     foreach (var doc in documents)
                     {
-                        var pdfBytes = GenerateReportPdfBytes(doc);
+                        // Notice it's passing "doc" here, not "document"
+                        var pdfBytes = _pdfReportService.GenerateReport(doc); 
                         var safeName = $"{doc.FileName ?? "Document"}_Report.pdf";
                         
                         var zipEntry = archive.CreateEntry(safeName, CompressionLevel.Fastest);
@@ -420,100 +415,6 @@ namespace EasyFile.Controllers
                 _logger.LogError(ex, "Failed to zip original files.");
                 return StatusCode(500, new { message = "Failed to zip original files." });
             }
-        }
-
-        // ==========================================
-        // PRIVATE HELPERS
-        // ==========================================
-        private byte[] GenerateReportPdfBytes(EasyFile.Models.Document document)
-        {
-            QuestPDF.Settings.License = LicenseType.Community;
-
-            return QuestPDF.Fluent.Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.Letter);
-                    page.Margin(1, Unit.Inch);
-                    page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(11).FontFamily(Fonts.Arial).FontColor(Colors.Black));
-
-                    page.Header().Column(col =>
-                    {
-                        col.Item().Text("EasyFile Intelligence Report").SemiBold().FontSize(20).FontColor(Colors.Blue.Darken2);
-                        col.Item().Text($"Source Document: {document.FileName}").FontSize(10).FontColor(Colors.Grey.Medium);
-                        col.Item().PaddingTop(10).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                    });
-
-                    page.Content().PaddingVertical(15).Column(col =>
-                    {
-                        col.Spacing(15);
-
-                        var warnings = string.IsNullOrEmpty(document.Warnings) 
-                            ? Array.Empty<string>() 
-                            : document.Warnings.Split('|', StringSplitOptions.RemoveEmptyEntries);
-
-                        if (warnings.Length > 0)
-                        {
-                            col.Item().Background(Colors.Red.Lighten5).Padding(10).Column(warnCol =>
-                            {
-                                warnCol.Item().Text("PRE-FLIGHT REJECTION WARNINGS").Bold().FontColor(Colors.Red.Medium);
-                                foreach (var w in warnings)
-                                {
-                                    warnCol.Item().PaddingTop(5).Text($"• {w}").FontColor(Colors.Red.Darken2);
-                                }
-                            });
-                        }
-                        else
-                        {
-                            col.Item().Background(Colors.Green.Lighten5).Padding(10).Text("No critical issues detected by AI.").FontColor(Colors.Green.Medium);
-                        }
-
-                        col.Item().Text("1. SETUP & CATEGORIZATION").Bold().FontColor(Colors.Grey.Darken3);
-                        col.Item().PaddingLeft(10).Column(sub =>
-                        {
-                            sub.Item().Text(text => { text.Span("Case Title: ").SemiBold(); text.Span(document.CaseTitle); });
-                            
-                            var filingTypeDisplay = document.FilingType;
-                            if (document.FilingType == "Subsequent Filing" && document.CaseNumber != "Missing")
-                            {
-                                filingTypeDisplay += $" ({document.CaseNumber})";
-                            }
-                            sub.Item().Text(text => { text.Span("Filing Type: ").SemiBold(); text.Span(filingTypeDisplay); });
-                            sub.Item().Text(text => { text.Span("Case Category: ").SemiBold(); text.Span(document.CaseCategory); });
-                            sub.Item().Text(text => { text.Span("Case Type: ").SemiBold(); text.Span(document.CaseType); });
-                        });
-
-                        col.Item().Text("2. PARTIES & REPRESENTATION").Bold().FontColor(Colors.Grey.Darken3);
-                        col.Item().PaddingLeft(10).Column(sub =>
-                        {
-                            sub.Item().Text(text => { text.Span("Filed By: ").SemiBold(); text.Span(document.FiledBy); });
-                            sub.Item().Text(text => { text.Span("Refers To: ").SemiBold(); text.Span(document.RefersTo); });
-                            sub.Item().Text(text => { text.Span("Representation: ").SemiBold(); text.Span(document.Representation); });
-                        });
-
-                        col.Item().Text("3. DOCUMENT SPECIFICS").Bold().FontColor(Colors.Grey.Darken3);
-                        col.Item().PaddingLeft(10).Column(sub =>
-                        {
-                            sub.Item().Text(text => { text.Span("E-Filing Doc Type: ").SemiBold(); text.Span(document.EFilingDocType).FontColor(Colors.Blue.Medium); });
-                            sub.Item().Text(text => { text.Span("Exact Title: ").SemiBold(); text.Span(document.DocumentTitle); });
-                            sub.Item().Text(text => { text.Span("Estimated Fee: ").SemiBold(); text.Span(document.EstimatedFee); });
-                        });
-                    });
-
-                    page.Footer().Column(f =>
-                    {
-                        f.Item().AlignCenter().PaddingBottom(5).Text("Disclaimer: This report is generated by AI and is intended for informational purposes only. It does not constitute legal advice.").FontSize(8).FontColor(Colors.Grey.Medium).Italic();
-                        f.Item().AlignCenter().Text(x =>
-                        {
-                            x.Span("Generated by EasyFile AI • Page ");
-                            x.CurrentPageNumber();
-                            x.Span(" of ");
-                            x.TotalPages();
-                        });
-                    });
-                });
-            }).GeneratePdf();
         }
     }
 }

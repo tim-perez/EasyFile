@@ -1,5 +1,5 @@
+using System.IO;
 using System.Threading.Tasks;
-
 namespace EasyFile.Interfaces
 {
     /// <summary>

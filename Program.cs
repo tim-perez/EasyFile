@@ -99,6 +99,7 @@ builder.Services.AddAWSService<IAmazonTextract>();
 builder.Services.AddHttpClient<IAiReviewService, AiReviewService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>(); 
 builder.Services.AddScoped<ITextractService, TextractService>();
+builder.Services.AddScoped<IPdfReportService, PdfReportService>();
 
 builder.Services.AddHostedService<GuestCleanupService>();
 
