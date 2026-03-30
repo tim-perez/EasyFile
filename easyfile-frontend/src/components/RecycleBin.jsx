@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import ReviewModal from './ReviewModal'; 
 
 export default function RecycleBin() {
+  const { user } = useContext(AuthContext); // <-- 1. Get the current user
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,7 +12,11 @@ export default function RecycleBin() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
-  // NEW: SORTING & FILTERING STATE
+  // NEW ADMIN STATE: User Dictionary & Popover
+  const [userDictionary, setUserDictionary] = useState({});
+  const [activePopoverId, setActivePopoverId] = useState(null);
+
+  // SORTING & FILTERING STATE
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' }); // Default: Latest deleted date
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
@@ -22,6 +28,22 @@ export default function RecycleBin() {
 
   useEffect(() => {
     fetchRecycledDocuments();
+
+    // 2. Fetch the User Dictionary if they are an Admin
+    if (user?.role === 'Admin') {
+      api.get('/users/all').then(res => {
+        const dictionary = {};
+        res.data.forEach(u => dictionary[u.id] = u);
+        setUserDictionary(dictionary);
+      }).catch(err => console.error("Failed to load user dictionary", err));
+    }
+  }, [user]);
+
+  // 3. Closes the Admin popover if you click anywhere else
+  useEffect(() => {
+    const handleClickOutside = () => setActivePopoverId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const fetchRecycledDocuments = async () => {
@@ -42,7 +64,6 @@ export default function RecycleBin() {
   // CHECKBOX & ACTION LOGIC
   // ==========================================
   const handleSelectAll = (e) => {
-    // NEW: Select all from PROCESSED documents, not raw documents
     if (e.target.checked) setSelectedIds(processedDocuments.map(doc => doc.id));
     else setSelectedIds([]);
   };
@@ -98,9 +119,8 @@ export default function RecycleBin() {
   };
 
   // ==========================================
-  // NEW: FILTERING & SORTING PIPELINE
+  // FILTERING & SORTING PIPELINE
   // ==========================================
-  
   const uniqueOptions = useMemo(() => {
     return {
       titles: [...new Set(documents.map(d => d.documentTitle || d.DocumentTitle).filter(Boolean))],
@@ -158,7 +178,6 @@ export default function RecycleBin() {
           break;
         case 'date':
         default:
-          // In Recycle Bin, sort by deletion date if available, otherwise creation date
           aValue = new Date(a.deletedAt || a.DeletedAt || a.createdAt || a.CreatedAt || 0).getTime();
           bValue = new Date(b.deletedAt || b.DeletedAt || b.createdAt || b.CreatedAt || 0).getTime();
           break;
@@ -170,7 +189,6 @@ export default function RecycleBin() {
     });
   }, [documents, activeFilters, sortConfig]);
 
-  // NEW: Helper for Sortable Headers
   const SortableHeader = ({ label, sortKey, colSpan = 1 }) => (
     <div 
       className={`col-span-${colSpan} flex items-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors select-none`}
@@ -210,7 +228,7 @@ export default function RecycleBin() {
         </div>
       </div>
 
-      {/* NEW: FILTER BUTTON & PANEL */}
+      {/* FILTER BUTTON & PANEL */}
       <div className="mb-4 px-2 relative">
         <button 
           onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
@@ -263,7 +281,6 @@ export default function RecycleBin() {
         <div className="overflow-x-auto">
           <div className="min-w-275">
             
-            {/* NEW: SORTABLE TABLE HEADER */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <div className="col-span-1 flex items-center justify-center">
                 <input 
@@ -297,7 +314,6 @@ export default function RecycleBin() {
               </div>
             )}
 
-            {/* NEW: Map over processedDocuments instead of raw documents */}
             {!isLoading && !error && processedDocuments.length > 0 && (
               <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {processedDocuments.map((doc) => (
@@ -307,11 +323,40 @@ export default function RecycleBin() {
                       <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
                     </div>
 
-                    <div className="col-span-2 flex flex-col pr-4 overflow-hidden opacity-60">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate w-full block" title={doc.fileName || doc.FileName}>
-                        {doc.fileName || doc.FileName || 'Unknown File'}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
+                    {/* ========================================== */}
+                    {/* UPDATED: File Name Column with Initials    */}
+                    {/* ========================================== */}
+                    <div className="col-span-2 flex items-center gap-3 pr-4 opacity-60">
+                      {user?.role === 'Admin' && (
+                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
+                              ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
+                          >
+                            {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
+                          </button>
+
+                          {activePopoverId === doc.id && (
+                            <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-fade-in-up">
+                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
+                              <div className="space-y-1 text-sm">
+                                <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-blue-600 dark:text-blue-400">{documents.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col overflow-hidden w-full">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate w-full block" title={doc.fileName || doc.FileName}>
+                          {doc.fileName || doc.FileName || 'Unknown File'}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
+                      </div>
                     </div>
 
                     <div className="col-span-2 flex items-center pr-2 overflow-hidden opacity-60">

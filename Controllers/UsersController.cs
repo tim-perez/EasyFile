@@ -151,23 +151,38 @@ namespace EasyFile.Controllers
         }
 
         // ==========================================
-        // ADMIN: PERMANENTLY DELETE USER
+        // ADMIN: BAN / DEACTIVATE USER
         // ==========================================
-        [HttpDelete("admin-delete/{id}")]
+        [HttpPut("admin-ban/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AdminDeleteUser(int id)
+        public async Task<IActionResult> AdminBanUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound(new { message = "User not found." });
 
-            // 1. Wipe their AWS S3 Folder so we leave no orphaned files
-            await _documentService.DeleteUserFolderAsync(user.Id.ToString());
-
-            // 2. Wipe them from SQL (This instantly cascade-deletes all their SQL document records too!)
-            _context.Users.Remove(user);
+            // Instead of deleting, we simply change their role so they can never log in again, 
+            // but all their documents and data remain safely in your database!
+            user.AccountType = "Banned";
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "User and all associated data permanently deleted." });
+            return Ok(new { message = "User has been deactivated successfully." });
+        }
+
+        // ==========================================
+        // ADMIN: UNBAN / REACTIVATE USER
+        // ==========================================
+        [HttpPut("admin-unban/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminUnbanUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound(new { message = "User not found." });
+
+            // Restore them to standard Customer status so they can log in again
+            user.AccountType = "Customer";
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User has been reactivated successfully." });
         }
     }
 

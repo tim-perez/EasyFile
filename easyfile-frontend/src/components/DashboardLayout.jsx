@@ -417,6 +417,25 @@ export default function DashboardLayout() {
               </Link>
             )}
 
+            {/* ADMIN ONLY: Users Link */}
+            {user?.role === 'Admin' && (
+              <Link 
+                to="/users" 
+                className={`flex items-center rounded-lg cursor-pointer transition-colors duration-200
+                  ${isSidebarExpanded ? 'px-4 py-3' : 'px-0 py-3 justify-center'}
+                  ${isActive('/users') 
+                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium' 
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}
+                `}
+                title={!isSidebarExpanded ? "Users" : ""}
+              >
+                <svg className={`w-6 h-6 shrink-0 ${isSidebarExpanded ? 'mr-4' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                {isSidebarExpanded && <span className="truncate">Users</span>}
+              </Link>
+            )}
+
           </nav>
         </aside>
 

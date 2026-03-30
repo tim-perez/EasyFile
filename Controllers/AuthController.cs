@@ -59,6 +59,10 @@ namespace EasyFile.Controllers
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null) return Unauthorized(new { message = "Invalid credentials." });
 
+            // 🛑 NEW: The Ban Hammer Guard
+            if (user.AccountType == "Banned") 
+                return Unauthorized(new { message = "This account has been deactivated. Please contact support." });
+
             bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isValid) return Unauthorized(new { message = "Invalid credentials." });
 
@@ -85,7 +89,10 @@ namespace EasyFile.Controllers
             // 1. If React sent a saved email, try to find their active guest account!
             if (!string.IsNullOrEmpty(request?.GuestEmail))
             {
-                guestUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.GuestEmail && u.AccountType == "Guest");
+                guestUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.GuestEmail && u.AccountType == "Guest");                
+                // 🛑 NEW: The Ban Hammer Guard for Guests
+                if (guestUser != null && guestUser.AccountType == "Banned")
+                    return Unauthorized(new { message = "This guest account has been deactivated." });
             }
 
             // 2. If they are brand new, OR if the 24-hour janitor deleted their old account, create a new one.

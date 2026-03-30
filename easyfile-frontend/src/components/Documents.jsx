@@ -19,15 +19,18 @@ export default function Documents() {
   const [searchParams, setSearchParams] = useSearchParams();
   const globalSearchQuery = searchParams.get('q') || '';
 
-  // NEW: SORTING & FILTERING STATE
-  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' }); // Default: Latest date
+  // SORTING & FILTERING STATE
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
-    documentTitle: '',
-    caseNumber: '',
-    county: '',
-    status: ''
+    documentTitle: '', caseNumber: '', county: '', status: ''
   });
+
+  // ==========================================
+  // NEW ADMIN STATE: User Dictionary & Popover
+  // ==========================================
+  const [userDictionary, setUserDictionary] = useState({});
+  const [activePopoverId, setActivePopoverId] = useState(null);
   
   // ==========================================
   // API FETCH & ACTIONS
@@ -35,7 +38,24 @@ export default function Documents() {
   useEffect(() => {
     fetchDocuments();
     window.addEventListener('documentUploaded', fetchDocuments);
+    
+    // THE NEW ADMIN DICTIONARY FETCH
+    if (user?.role === 'Admin') {
+      api.get('/users/all').then(res => {
+        const dictionary = {};
+        res.data.forEach(u => dictionary[u.id] = u);
+        setUserDictionary(dictionary);
+      }).catch(err => console.error("Failed to load user dictionary", err));
+    }
+
     return () => window.removeEventListener('documentUploaded', fetchDocuments);
+  }, [user]);
+
+  // Closes the Admin popover if you click anywhere else
+  useEffect(() => {
+    const handleClickOutside = () => setActivePopoverId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const fetchDocuments = async () => {
@@ -86,13 +106,13 @@ export default function Documents() {
     }
   };
 
-const handleDeleteDocument = async (documentId) => {
+  const handleDeleteDocument = async (documentId) => {
     if (!window.confirm("Move this document to the Recycle Bin?")) return;
     try {
       await api.delete(`/documents/${documentId}`);
       fetchDocuments();
     } catch (error) {
-      console.error("Failed to delete document:", error); // <-- Linter is happy!
+      console.error("Failed to delete document:", error);
       alert("Error deleting document.");
     }
   };
@@ -103,7 +123,7 @@ const handleDeleteDocument = async (documentId) => {
       await Promise.all(selectedIds.map(id => api.delete(`/documents/${id}`)));
       fetchDocuments(); 
     } catch (error) {
-      console.error("Failed to bulk delete:", error); // <-- Linter is happy!
+      console.error("Failed to bulk delete:", error);
       alert("Error moving documents.");
     }
   };
@@ -118,10 +138,8 @@ const handleDeleteDocument = async (documentId) => {
   };
 
   // ==========================================
-  // NEW: FILTERING & SORTING PIPELINE
+  // FILTERING & SORTING PIPELINE
   // ==========================================
-  
-  // 1. Generate dynamic dropdown options based on the data we actually have
   const uniqueOptions = useMemo(() => {
     return {
       titles: [...new Set(documents.map(d => d.documentTitle || d.DocumentTitle).filter(Boolean))],
@@ -131,81 +149,46 @@ const handleDeleteDocument = async (documentId) => {
     };
   }, [documents]);
 
-  const handleFilterChange = (key, value) => {
-    setActiveFilters(prev => ({ ...prev, [key]: value }));
-  };
-
+  const handleFilterChange = (key, value) => setActiveFilters(prev => ({ ...prev, [key]: value }));
   const clearFilters = () => {
     setActiveFilters({ documentTitle: '', caseNumber: '', county: '', status: '' });
     setIsFilterMenuOpen(false);
   };
 
   const handleSort = (key) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }));
+    setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
   };
 
-  // 2. Apply Filters and Sorting to create the final array we render
   const processedDocuments = useMemo(() => {
     let filtered = documents.filter(doc => {
-      // 1. Dropdown Filters
       const matchTitle = !activeFilters.documentTitle || (doc.documentTitle || doc.DocumentTitle) === activeFilters.documentTitle;
       const matchCase = !activeFilters.caseNumber || (doc.caseNumber || doc.CaseNumber) === activeFilters.caseNumber;
       const matchCounty = !activeFilters.county || (doc.county || doc.County) === activeFilters.county;
       const matchStatus = !activeFilters.status || (doc.status || doc.Status) === activeFilters.status;
       const passesDropdowns = matchTitle && matchCase && matchCounty && matchStatus;
 
-      // 2. Global Search Bar Filter
       let passesGlobalSearch = true;
       if (globalSearchQuery) {
         const q = globalSearchQuery.toLowerCase();
-        // Squish all searchable text into one giant string to easily search across everything
         const searchableText = [
-          doc.fileName || doc.FileName,
-          doc.documentTitle || doc.DocumentTitle,
-          doc.caseNumber || doc.CaseNumber,
-          doc.county || doc.County
+          doc.fileName || doc.FileName, doc.documentTitle || doc.DocumentTitle,
+          doc.caseNumber || doc.CaseNumber, doc.county || doc.County
         ].join(' ').toLowerCase();
-        
         passesGlobalSearch = searchableText.includes(q);
       }
-
       return passesDropdowns && passesGlobalSearch;
     });
 
     return filtered.sort((a, b) => {
       let aValue, bValue;
-
       switch (sortConfig.key) {
-        case 'fileName':
-          aValue = (a.fileName || a.FileName || '').toLowerCase();
-          bValue = (b.fileName || b.FileName || '').toLowerCase();
-          break;
-        case 'documentTitle':
-          aValue = (a.documentTitle || a.DocumentTitle || '').toLowerCase();
-          bValue = (b.documentTitle || b.DocumentTitle || '').toLowerCase();
-          break;
-        case 'caseNumber':
-          aValue = (a.caseNumber || a.CaseNumber || '').toLowerCase();
-          bValue = (b.caseNumber || b.CaseNumber || '').toLowerCase();
-          break;
-        case 'county':
-          aValue = (a.county || a.County || '').toLowerCase();
-          bValue = (b.county || b.County || '').toLowerCase();
-          break;
-        case 'status':
-          aValue = (a.status || a.Status || '').toLowerCase();
-          bValue = (b.status || b.Status || '').toLowerCase();
-          break;
-        case 'date':
-        default:
-          aValue = new Date(a.createdAt || a.CreatedAt || a.uploadDate || 0).getTime();
-          bValue = new Date(b.createdAt || b.CreatedAt || b.uploadDate || 0).getTime();
-          break;
+        case 'fileName': aValue = (a.fileName || a.FileName || '').toLowerCase(); bValue = (b.fileName || b.FileName || '').toLowerCase(); break;
+        case 'documentTitle': aValue = (a.documentTitle || a.DocumentTitle || '').toLowerCase(); bValue = (b.documentTitle || b.DocumentTitle || '').toLowerCase(); break;
+        case 'caseNumber': aValue = (a.caseNumber || a.CaseNumber || '').toLowerCase(); bValue = (b.caseNumber || b.CaseNumber || '').toLowerCase(); break;
+        case 'county': aValue = (a.county || a.County || '').toLowerCase(); bValue = (b.county || b.County || '').toLowerCase(); break;
+        case 'status': aValue = (a.status || a.Status || '').toLowerCase(); bValue = (b.status || b.Status || '').toLowerCase(); break;
+        case 'date': default: aValue = new Date(a.createdAt || a.CreatedAt || a.uploadDate || 0).getTime(); bValue = new Date(b.createdAt || b.CreatedAt || b.uploadDate || 0).getTime(); break;
       }
-
       if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
@@ -220,10 +203,7 @@ const handleDeleteDocument = async (documentId) => {
     else setSelectedIds([]);
   };
 
-  const handleSelectOne = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
-  };
-
+  const handleSelectOne = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
   const getStatusBadge = (status) => {
@@ -234,16 +214,10 @@ const handleDeleteDocument = async (documentId) => {
     return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">{currentStatus}</span>;
   };
 
-  // NEW: Helper for Sortable Headers
   const SortableHeader = ({ label, sortKey, colSpan = 1 }) => (
-    <div 
-      className={`col-span-${colSpan} flex items-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors select-none`}
-      onClick={() => handleSort(sortKey)}
-    >
+    <div className={`col-span-${colSpan} flex items-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors select-none`} onClick={() => handleSort(sortKey)}>
       {label}
-      <span className="ml-1 text-[10px] text-gray-400">
-        {sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
-      </span>
+      <span className="ml-1 text-[10px] text-gray-400">{sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</span>
     </div>
   );
 
@@ -271,7 +245,6 @@ const handleDeleteDocument = async (documentId) => {
               <option value="files">Download All Original Files</option>
             </select>
           </div>
-          {/* ONLY show bulk delete if NOT a Guest */}
           {user?.role !== 'Guest' && (
             <button onClick={handleBulkDelete} className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition flex items-center justify-center lg:justify-end gap-2 whitespace-nowrap w-full lg:w-auto lg:ml-auto">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -283,37 +256,23 @@ const handleDeleteDocument = async (documentId) => {
 
       {/* FILTER BUTTON, ACTIVE SEARCH BADGE, & DROPDOWN PANEL */}
       <div className="mb-4 px-2 relative flex flex-wrap items-center gap-3 z-20">
-        
-        <button 
-          onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-          className={`flex items-center text-sm font-medium transition px-3 py-1.5 rounded-md ${isFilterMenuOpen || activeFilterCount > 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}
-        >
+        <button onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className={`flex items-center text-sm font-medium transition px-3 py-1.5 rounded-md ${isFilterMenuOpen || activeFilterCount > 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}>
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
           Filter {activeFilterCount > 0 && `(${activeFilterCount})`}
         </button>
 
-        {/* Active Search Badge */}
         {globalSearchQuery && (
           <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-md text-sm font-medium border border-blue-200 dark:border-blue-800 animate-fade-in">
             <span>Search: "{globalSearchQuery}"</span>
-            <button 
-              onClick={() => {
-                const params = new URLSearchParams(searchParams);
-                params.delete('q');
-                setSearchParams(params);
-              }}
-              className="p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full transition-colors"
-            >
+            <button onClick={() => { const params = new URLSearchParams(searchParams); params.delete('q'); setSearchParams(params); }} className="p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         )}
 
-        {/* EXPANDABLE FILTER PANEL */}
         {isFilterMenuOpen && (
           <div className="absolute top-full left-0 mt-2 w-full max-w-4xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-4 z-50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">AI Document Title</label>
                 <select value={activeFilters.documentTitle} onChange={(e) => handleFilterChange('documentTitle', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
@@ -321,7 +280,6 @@ const handleDeleteDocument = async (documentId) => {
                   {uniqueOptions.titles.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Case Number</label>
                 <select value={activeFilters.caseNumber} onChange={(e) => handleFilterChange('caseNumber', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
@@ -329,7 +287,6 @@ const handleDeleteDocument = async (documentId) => {
                   {uniqueOptions.cases.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">County</label>
                 <select value={activeFilters.county} onChange={(e) => handleFilterChange('county', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
@@ -337,7 +294,6 @@ const handleDeleteDocument = async (documentId) => {
                   {uniqueOptions.counties.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
                 <select value={activeFilters.status} onChange={(e) => handleFilterChange('status', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
@@ -346,7 +302,6 @@ const handleDeleteDocument = async (documentId) => {
                 </select>
               </div>
             </div>
-            
             <div className="flex justify-end mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
               <button onClick={clearFilters} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition">Clear All Filters</button>
             </div>
@@ -379,15 +334,9 @@ const handleDeleteDocument = async (documentId) => {
           <div className="overflow-x-auto">
             <div className="min-w-275">
               
-              {/* SORTABLE TABLE HEADER */}
               <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <div className="col-span-1 flex items-center justify-center">
-                  <input 
-                    type="checkbox" 
-                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" 
-                    checked={processedDocuments.length > 0 && selectedIds.length === processedDocuments.length}
-                    onChange={handleSelectAll}
-                  />
+                  <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={processedDocuments.length > 0 && selectedIds.length === processedDocuments.length} onChange={handleSelectAll} />
                 </div>
                 <SortableHeader label="File Name" sortKey="fileName" colSpan={2} />
                 <SortableHeader label="AI Document Title" sortKey="documentTitle" colSpan={2} />
@@ -398,30 +347,49 @@ const handleDeleteDocument = async (documentId) => {
                 <div className="col-span-2 text-right">Actions</div>
               </div>
 
-              {/* TABLE ROWS - Now mapping over processedDocuments instead of documents */}
               <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {processedDocuments.map((doc) => (
-                  <div 
-                      key={doc.id} 
-                      className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group 
-                        ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'}
-                        ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20 shadow-inner' : ''}
-                      `}
-                    >                    
+                  <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'} ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20 shadow-inner' : ''}`}>                    
+                    
                     <div className="col-span-1 flex items-center justify-center">
-                      <input 
-                        type="checkbox" 
-                        className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                        checked={selectedIds.includes(doc.id)}
-                        onChange={() => handleSelectOne(doc.id)}
-                      />
+                      <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
                     </div>
 
-                    <div className="col-span-2 flex flex-col pr-4 overflow-hidden">
-                      <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate text-left w-full block transition-colors" title={doc.fileName || doc.FileName || 'Unknown File'}>
-                        {doc.fileName || doc.FileName || 'Unknown File'}
-                      </button>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
+                    {/* ========================================== */}
+                    {/* UPDATED: File Name Column with Initials    */}
+                    {/* ========================================== */}
+                    <div className="col-span-2 flex items-center gap-3 pr-4">
+                      
+                      {user?.role === 'Admin' && (
+                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
+                              ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
+                          >
+                            {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
+                          </button>
+
+                          {activePopoverId === doc.id && (
+                            <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-fade-in-up">
+                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
+                              <div className="space-y-1 text-sm">
+                                <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-blue-600 dark:text-blue-400">{documents.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col overflow-hidden w-full">
+                        <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate text-left w-full block transition-colors" title={doc.fileName || doc.FileName || 'Unknown File'}>
+                          {doc.fileName || doc.FileName || 'Unknown File'}
+                        </button>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
+                      </div>
                     </div>
 
                     <div className="col-span-2 flex items-center pr-2 overflow-hidden">
@@ -445,16 +413,9 @@ const handleDeleteDocument = async (documentId) => {
 
                     <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium whitespace-nowrap">View Report</button>
-                      {/* ONLY render the delete button if the user is NOT a Guest */}
                       {user?.role !== 'Guest' && (
-                        <button 
-                          onClick={() => handleDeleteDocument(doc.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400"
-                          title="Move to Recycle Bin"
-                        >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                       )}
                     </div>
