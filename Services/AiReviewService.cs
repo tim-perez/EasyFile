@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using EasyFile.Interfaces;
 
 namespace EasyFile.Services
@@ -11,19 +12,11 @@ namespace EasyFile.Services
     public class AiReviewService : IAiReviewService
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<AiReviewService> _logger;
         private readonly string _apiKey;
 
-        public AiReviewService(HttpClient httpClient, IConfiguration configuration)
-        {
-            _httpClient = httpClient;
-            _apiKey = configuration["OpenAI:ApiKey"] 
-                      ?? throw new ArgumentNullException("OpenAI API Key is missing in appsettings.json!");
-        }
-
-        public async Task<string> GenerateDocumentReportAsync(string extractedText)
-        {
-            // 1. THE SYSTEM PROMPT (The Brain of your E-Filing Assistant)
-            string systemPrompt = @"
+        // 1. Extract the System Prompt to a constant to keep the method logic clean
+        private const string SystemPrompt = @"
 You are an expert California legal document classifier and e-filing assistant. Your job is to extract specific data from raw OCR text to help users e-file correctly.
 
 CRITICAL GATEKEEPER RULE: 
@@ -53,15 +46,26 @@ If it IS a legal document, extract the data and return a JSON object with EXACTL
   If there are no warnings, return an empty array [].
 
 Output ONLY valid raw JSON. Do NOT include markdown formatting, backticks (```), or explanations.";
-            // 2. Build the request payload for OpenAI (Using GPT-4o-mini to save you money while remaining incredibly smart!)
+
+        public AiReviewService(HttpClient httpClient, IConfiguration configuration, ILogger<AiReviewService> logger)
+        {
+            _httpClient = httpClient;
+            _logger = logger;
+            _apiKey = configuration["OpenAI:ApiKey"] 
+                      ?? throw new ArgumentNullException(nameof(configuration), "OpenAI API Key is missing in appsettings.json!");
+        }
+
+        public async Task<string> GenerateDocumentReportAsync(string extractedText)
+        {
+            // 2. Build the request payload for OpenAI 
             var requestBody = new
             {
                 model = "gpt-4o-mini",
-                response_format = new { type = "json_object" }, // FORCES valid JSON output
-                temperature = 0.1, // Keeps the AI strict and analytical
+                response_format = new { type = "json_object" },
+                temperature = 0.1, 
                 messages = new[]
                 {
-                    new { role = "system", content = systemPrompt },
+                    new { role = "system", content = SystemPrompt },
                     new { role = "user", content = $"Here is the extracted document text:\n\n{extractedText}" }
                 }
             };
@@ -69,21 +73,21 @@ Output ONLY valid raw JSON. Do NOT include markdown formatting, backticks (```),
             var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
             // 3. Setup the HTTP Request
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+            using var request = new HttpRequestMessage(HttpMethod.Post, "[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)");
             request.Headers.Add("Authorization", $"Bearer {_apiKey}");
             request.Content = jsonContent;
 
-            // 4. Send it to OpenAI
+            // 4. Send to OpenAI and Handle Errors securely
             var response = await _httpClient.SendAsync(request);
             var responseString = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"[OpenAI Error] {responseString}");
-                throw new Exception("Failed to communicate with OpenAI.");
+                _logger.LogError("OpenAI API failed with status {StatusCode}. Response: {Response}", response.StatusCode, responseString);
+                throw new HttpRequestException("Failed to communicate with OpenAI API.");
             }
 
-            // 5. Parse the response to grab just the JSON string the AI generated
+            // 5. Parse the response
             using JsonDocument doc = JsonDocument.Parse(responseString);
             var aiMessage = doc.RootElement
                 .GetProperty("choices")[0]
