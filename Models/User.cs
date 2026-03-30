@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.InteropServices;
 
 namespace EasyFile.Models
 {
@@ -46,16 +46,3 @@ namespace EasyFile.Models
         public ICollection<Document> ReviewedDocuments { get; set; } = new List<Document>();
     }
 }
-
-
-// namespace EasyFile.Models
-// {
-//     public class User
-//     {
-//         public int Id { get; set; }
-//         public required string Username { get; set; }
-//         public required string PasswordHash { get; set; }
-//         public required string Role { get; set; } = "Employee";
-//         public ICollection<Order> Orders { get; set; } = new List<Order>();
-//     }
-// }
