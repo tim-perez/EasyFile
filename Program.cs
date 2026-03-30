@@ -1,20 +1,51 @@
-using Microsoft.EntityFrameworkCore;
-using EasyFile.Data;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Text;
-// Add these two lines so Program.cs can find your services!
-using EasyFile.Interfaces; 
-using EasyFile.Services;   
+using System.Text.Json.Serialization;
 using Amazon.S3;
 using Amazon.Textract;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
+using EasyFile.Data;
+using EasyFile.Interfaces;
+using EasyFile.Middlewares;
+using EasyFile.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// ==========================================
+// 1. CORE WEB SERVICES
+// ==========================================
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Prevents infinite loops if models reference each other
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ==========================================
+// 2. EXCEPTION HANDLING
+// ==========================================
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// ==========================================
+// 3. DATABASE
+// ==========================================
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ==========================================
+// 4. AUTHENTICATION & AUTHORIZATION
+// ==========================================
+var secretKey = builder.Configuration["JwtSettings:SecretKey"] 
+    ?? throw new InvalidOperationException("JWT Secret is missing.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -23,9 +54,6 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    var secretKey = builder.Configuration["JwtSettings:SecretKey"] 
-        ?? throw new InvalidOperationException("JWT Secret is missing.");
-        
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = false,
@@ -38,6 +66,9 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// ==========================================
+// 5. CORS POLICY
+// ==========================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -49,28 +80,42 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Register your custom services here!
-builder.Services.AddHttpClient<IAiReviewService, AiReviewService>();
-builder.Services.AddScoped<IDocumentService, DocumentService>(); 
-builder.Services.AddScoped<ITextractService, TextractService>();
-builder.Services.AddHostedService<GuestCleanupService>(); // <-- This starts the background cleanup task when your server runs!
-
 // ==========================================
-// NEW: Force AWS to use the easyfile-backend user
+// 6. AWS SERVICES
 // ==========================================
 var awsOptions = builder.Configuration.GetAWSOptions("AWS");
 awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(
     builder.Configuration["AWS:AccessKey"], 
-    builder.Configuration["AWS:SecretKey"]);
+    builder.Configuration["AWS:SecretKey"]
+);
 
 builder.Services.AddDefaultAWSOptions(awsOptions);
 builder.Services.AddAWSService<IAmazonS3>();
-builder.Services.AddAWSService<IAmazonTextract>(); // <-- This gives Textract the keys!
+builder.Services.AddAWSService<IAmazonTextract>();
 
+// ==========================================
+// 7. APPLICATION SERVICES & BACKGROUND TASKS
+// ==========================================
+builder.Services.AddHttpClient<IAiReviewService, AiReviewService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>(); 
+builder.Services.AddScoped<ITextractService, TextractService>();
+
+builder.Services.AddHostedService<GuestCleanupService>();
+
+// ==========================================
+// 8. MIDDLEWARE PIPELINE
+// ==========================================
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+app.UseExceptionHandler(); // Placed at the top to catch everything downstream
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
@@ -79,93 +124,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
-// using EasyFile.Data;
-// using EasyFile.Interfaces;
-// using EasyFile.Repositories;
-// using Microsoft.EntityFrameworkCore;
-// using System.Text.Json.Serialization;
-// using Amazon.S3;
-// using EasyFile.Middlewares;
-// using EasyFile.Services;
-// using Microsoft.AspNetCore.Authentication.JwtBearer;
-// using Microsoft.IdentityModel.Tokens;
-// using System.Text;
-
-// var builder = WebApplication.CreateBuilder(args);
-
-// builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen();
-
-// builder.Services.AddControllers().AddJsonOptions(options =>
-// {
-//     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-// });
-
-// builder.Services.AddDbContext<AppDbContext>(options =>
-//     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy("AllowReactApp",
-//         policy => policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
-//                         .AllowAnyHeader()
-//                         .AllowAnyMethod());
-// });
-
-// builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
-
-// var awsOptions = builder.Configuration.GetAWSOptions("AWS");
-// awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(
-//     builder.Configuration["AWS:AccessKey"], 
-//     builder.Configuration["AWS:SecretKey"]);
-// builder.Services.AddDefaultAWSOptions(awsOptions);
-// builder.Services.AddAWSService<IAmazonS3>();
-
-// builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-// builder.Services.AddProblemDetails();
-// builder.Services.AddScoped<IDocumentService, DocumentService>();
-
-// builder.Services.AddAuthentication(options =>
-// {
-//     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-// })
-// .AddJwtBearer(options =>
-// {
-//     var secretKey = builder.Configuration["JwtSettings:SecretKey"] 
-//         ?? throw new InvalidOperationException("JWT Secret is missing.");
-        
-//     options.TokenValidationParameters = new TokenValidationParameters
-//     {
-//         ValidateIssuer = false, // Can be enabled later for strict domain checking
-//         ValidateAudience = false,
-//         ValidateLifetime = true,
-//         ValidateIssuerSigningKey = true,
-//         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-//     };
-// });
-
-// builder.Services.AddAuthorization();
-
-// var app = builder.Build();
-
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
-// }
-
-// app.UseHttpsRedirection();
-
-// app.UseCors("AllowReactApp");
-
-// app.UseExceptionHandler();
-
-// app.UseAuthentication(); 
-// app.UseAuthorization();
-
-// app.MapControllers(); 
-
-// app.Run();

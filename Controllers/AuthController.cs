@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using EasyFile.Data;
 using EasyFile.Models;
+using EasyFile.Models.DTOs;
 
 namespace EasyFile.Controllers
 {
@@ -163,10 +164,5 @@ namespace EasyFile.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-    }
-
-    public class GuestRequestDto
-    {
-        public string? GuestEmail { get; set; }
     }
 }
