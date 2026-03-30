@@ -1,26 +1,22 @@
-import { useState, useRef, useContext } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import api from '../services/api';
+import { useAuth } from '../../context/AuthProvider';
+import api from '../../services/api';
 
 export default function UploadDocumentModal({ isOpen, onClose }) {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // States: 'idle', 'processing', 'success', 'error'
   const [uploadState, setUploadState] = useState('idle'); 
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
 
-  // Reset state when modal opens/closes
-  // NEW: A clean function to handle closing and resetting simultaneously
   const handleCloseModal = () => {
-    onClose(); // Tell the layout to hide the modal
+    onClose(); 
     
-    // Give the modal 300ms to visually fade away before wiping the state clean
     setTimeout(() => {
       setUploadState('idle');
       setProgress(0);
@@ -30,11 +26,9 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  // --- 1. File Selection & Validation ---
   const handleFileSelect = (file) => {
     if (!file) return;
     
-    // Ensure it's a PDF or Image
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
     if (!validTypes.includes(file.type)) {
       setErrorMessage("Invalid file type. Please upload a PDF or Image (JPG/PNG).");
@@ -45,19 +39,16 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
     processUpload(file);
   };
 
-  // --- 2. The Upload & Animation Engine ---
   const processUpload = async (file) => {
     setUploadState('processing');
     setProgress(0);
     setStatusText('Encrypting and uploading file...');
 
-    // Artificial progress animation while waiting for backend
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 40 && prev < 45) setStatusText('Extracting text via AWS Textract...');
         if (prev >= 60 && prev < 65) setStatusText('AI Legal Review in progress...');
         
-        // Ramp up quickly to 85%, then hold there until the API actually finishes
         if (prev >= 85) return 85; 
         return prev + 2; 
       });
@@ -67,16 +58,13 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
       const formData = new FormData();
       formData.append('file', file);
       
-      // NEW: Grab the ID and pack it in the box so C# accepts the delivery!
-      const currentUserId = user?.id || localStorage.getItem('userId') || "1";
+      const currentUserId = user?.id || localStorage.getItem('id') || "1";
       formData.append('userId', currentUserId);
 
-      // Call the C# Backend
       await api.post('/documents/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // If successful, jump to 100% and show success UI
       clearInterval(progressInterval);
       setProgress(100);
       setStatusText('Scan Complete!');
@@ -84,10 +72,7 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
       setTimeout(() => {
         setUploadState('success');
         
-        // 1. Your existing global signal to refresh the documents table
         window.dispatchEvent(new Event('documentUploaded')); 
-        
-        // 2. NEW: Trigger the specific notification with the file name attached!
         window.dispatchEvent(new CustomEvent('documentProcessed', { 
           detail: { fileName: file.name } 
         }));
@@ -97,17 +82,14 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
     } catch (error) {
       clearInterval(progressInterval);
       setUploadState('error');
-      // Look for our specific AI Gatekeeper rejection message
-      // NEW: We are telling React to prioritize the exact system error (ex.Message)
       setErrorMessage(
-        error.response?.data?.error ||    // <-- Adds the specific C# exception
+        error.response?.data?.error ||    
         error.response?.data?.message || 
         'An error occurred during upload or analysis. Please try again.'
       );
     }
   };
 
-  // --- 3. Drag and Drop Handlers ---
   const onDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
   const onDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
   const onDrop = (e) => {
@@ -118,7 +100,6 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
     }
   };
 
-  // --- 4. Navigation Actions ---
   const goToDocuments = () => {
     handleCloseModal();
     navigate('/documents');
@@ -130,7 +111,6 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
     setErrorMessage('');
   };
 
-  // --- Render Helpers ---
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -138,13 +118,10 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 transition-opacity backdrop-blur-sm px-4">
       
-      {/* Modal Container */}
       <div className="bg-white dark:bg-[#1f1f1f] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all">
         
-        {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upload Legal Document</h2>
-          {/* Disable close button while processing to prevent aborted calls */}
           <button 
             onClick={handleCloseModal} 
             disabled={uploadState === 'processing'}
@@ -154,10 +131,8 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Content Body */}
         <div className="p-6 md:p-10 flex flex-col items-center justify-center min-h-87.5">
           
-          {/* STATE: IDLE (Ready to upload) */}
           {uploadState === 'idle' && (
             <div 
               onDragOver={onDragOver}
@@ -194,7 +169,6 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* STATE: PROCESSING (Uploading & Scanning) */}
           {uploadState === 'processing' && (
             <div className="flex flex-col items-center justify-center animate-pulse">
               <div className="relative flex items-center justify-center w-32 h-32 mb-6">
@@ -213,7 +187,6 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* STATE: SUCCESS */}
           {uploadState === 'success' && (
             <div className="flex flex-col items-center justify-center">
               <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
@@ -237,7 +210,6 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* STATE: ERROR */}
           {uploadState === 'error' && (
             <div className="flex flex-col items-center justify-center text-center">
               <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
@@ -261,71 +233,3 @@ export default function UploadDocumentModal({ isOpen, onClose }) {
     </div>
   );
 }
-// import { useState, useContext } from 'react';
-// import { AuthContext } from '../context/AuthContext';
-// import { Link, useNavigate } from 'react-router-dom';
-
-
-// export default function UploadDocumentModal() {
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [selectedFile, setSelectedFile] = useState(null);
-
-//   const { user } = useContext(AuthContext);
-//   const navigate = useNavigate();
-
-//   const handleFileChange = (e) => {
-//     setSelectedFile(e.target.files[0]);
-//   };
-
-//   const handleUpload = async () => {
-//     if (!selectedFile) return;
-
-//     if (user && user.isGuest === true) {
-//       const currentCount = parseInt(localStorage.getItem('guestDocCount'), 10);
-      
-//       if (currentCount >= 5) {
-//         window.alert("You have reached the 5 document limit for guests. Please register for an account to upload more!");
-//         navigate('/register');
-//         return;
-//       }
-//     }
-
-//     const formData = new FormData();
-//     formData.append('file', selectedFile);
-
-//     try {
-//       const response = await fetch('/api/documents/upload', { /* ... */ });
-      
-//       if (response.ok) {
-//         setIsModalOpen(false);
-//         setSelectedFile(null);
-        
-//         if (user && user.isGuest === true) {
-//            const currentCount = parseInt(localStorage.getItem('guestDocCount'), 10);
-//            localStorage.setItem('guestDocCount', (currentCount + 1).toString());
-//         }
-//       }
-//     } catch (error) {
-//       console.error("Upload failed", error);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <button onClick={() => setIsModalOpen(true)}>Upload Document</button>
-
-//       {isModalOpen && (
-//         <div className="modal-overlay">
-//           <div className="modal-content">
-//             <h2>Upload a Document</h2>
-            
-//             <input type="file" onChange={handleFileChange} />
-            
-//             <button onClick={handleUpload}>Submit</button>
-//             <button onClick={() => setIsModalOpen(false)}>Cancel</button>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }

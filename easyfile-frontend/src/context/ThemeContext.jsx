@@ -3,7 +3,6 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // 1. Helper to check the current system theme
     const getSystemTheme = () => 
         window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
@@ -12,7 +11,6 @@ export const ThemeProvider = ({ children }) => {
     useEffect(() => {
         const root = window.document.documentElement;
 
-        // 2. Apply the 'dark' or 'light' class to the HTML tag
         if (theme === 'dark') {
             root.classList.add('dark');
             root.classList.remove('light');
@@ -23,7 +21,6 @@ export const ThemeProvider = ({ children }) => {
     }, [theme]);
 
     useEffect(() => {
-        // 3. Listen for changes to the operating system's theme in real-time
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         
         const handleChange = (e) => {
@@ -42,4 +39,10 @@ export const ThemeProvider = ({ children }) => {
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => {
+    const context = useContext(ThemeContext);
+    if (context === undefined) {
+        throw new Error("useTheme must be used within a ThemeProvider");
+    }
+    return context;
+};

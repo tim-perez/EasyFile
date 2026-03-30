@@ -1,24 +1,32 @@
-import { useState } from 'react';
-import { AuthContext } from './AuthContext';
-import api from '../services/api';
+import React, { createContext, useContext, useState } from 'react';
+import api, { STORAGE_KEYS } from '../services/api';
+
+const AuthContext = createContext(null);
+
+// Centralize the local UI keys so we never misspell them
+const UI_STORAGE_KEYS = {
+    USER_DATA: 'easyfile_user', // Bundles id, names, email, isGuest
+};
 
 export const AuthProvider = ({ children }) => {
+    const [loading, setLoading] = useState(false);
+
+    // 1. Initialize state cleanly from bundled storage
     const [user, setUser] = useState(() => {
-        const id = localStorage.getItem('id');
-        const token = localStorage.getItem('jwtToken');
-        const role = localStorage.getItem('userRole');
-        const firstName = localStorage.getItem('firstName');
-        const lastName = localStorage.getItem('lastName');
-        const email = localStorage.getItem('email');
-        const isGuest = localStorage.getItem('isGuest') === 'true'; 
+        const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+        const role = localStorage.getItem(STORAGE_KEYS.ROLE);
+        const savedUserData = localStorage.getItem(UI_STORAGE_KEYS.USER_DATA);
         
-        if (token && role) {
-            return { id, token, role, firstName, lastName, email, isGuest }; 
+        if (token && role && savedUserData) {
+            try {
+                const parsedData = JSON.parse(savedUserData);
+                return { token, role, ...parsedData };
+            } catch {
+                return null; // Fail safe if JSON is corrupted
+            }
         }
         return null;
     });
-    
-    const [loading, setLoading] = useState(false);
 
     const login = async (email, password) => {
         try {
@@ -27,15 +35,15 @@ export const AuthProvider = ({ children }) => {
             
             const { id, token, role, firstName, lastName, email: userEmail } = response.data; 
             
-            localStorage.setItem('id', id);
-            localStorage.setItem('jwtToken', token);
-            localStorage.setItem('userRole', role);
-            localStorage.setItem('firstName', firstName);
-            localStorage.setItem('lastName', lastName);
-            localStorage.setItem('email', userEmail);
-            localStorage.removeItem('isGuest'); 
+            // 2. Save token and role for the API service
+            localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+            localStorage.setItem(STORAGE_KEYS.ROLE, role);
             
-            setUser({ id, token, role, firstName, lastName, email: userEmail, isGuest: false }); 
+            // 3. Bundle the rest into a single JSON object for the UI
+            const userData = { id, firstName, lastName, email: userEmail, isGuest: false };
+            localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+            
+            setUser({ token, role, ...userData }); 
         } catch (error) {
             console.error("Authentication failed:", error);
             throw error; 
@@ -48,55 +56,44 @@ export const AuthProvider = ({ children }) => {
         try {
             setLoading(true);
             
-            // 1. Check if this browser already has a saved guest identity
-            const savedGuestEmail = localStorage.getItem('persistentGuestEmail');
-            
-            // 2. Send it to the backend (it will be null if they are brand new)
+            const savedGuestEmail = localStorage.getItem(STORAGE_KEYS.GUEST_EMAIL);
             const response = await api.post('/auth/guest-login', { guestEmail: savedGuestEmail });
             
             const { id, token, role, firstName, lastName, email } = response.data;
             
-            localStorage.setItem('id', id);
-            localStorage.setItem('jwtToken', token);
-            localStorage.setItem('userRole', role);
-            localStorage.setItem('firstName', firstName);
-            localStorage.setItem('lastName', lastName);
-            localStorage.setItem('email', email);
-            localStorage.setItem('isGuest', 'true');
+            localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+            localStorage.setItem(STORAGE_KEYS.ROLE, role);
+            localStorage.setItem(STORAGE_KEYS.GUEST_EMAIL, email); // The persistent magic!
             
-            // 3. THE MAGIC: Save their guest email permanently to the browser!
-            localStorage.setItem('persistentGuestEmail', email);
+            const userData = { id, firstName, lastName, email, isGuest: true };
+            localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
 
-            setUser({ id, token, role, firstName, lastName, email, isGuest: true });
+            setUser({ token, role, ...userData });
         } catch (error) {
             console.error("Guest login failed:", error);
+            throw error;
         } finally {
             setLoading(false);
         }
     };
 
-    // ==========================================
-    // ADDED BACK: Update Context Function
-    // ==========================================
     const updateUserContext = (newFirstName, newLastName, newEmail) => {
-        localStorage.setItem('firstName', newFirstName);
-        localStorage.setItem('lastName', newLastName);
-        localStorage.setItem('email', newEmail);
-        setUser(prev => ({ ...prev, firstName: newFirstName, lastName: newLastName, email: newEmail }));
+        const updatedData = { ...user, firstName: newFirstName, lastName: newLastName, email: newEmail };
+        
+        // Save the updated bundle minus the token/role
+        // eslint-disable-next-line no-unused-vars
+        const { token, role, ...storageData } = updatedData;
+        localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(storageData));
+        
+        setUser(updatedData);
     };
 
-    // ==========================================
-    // ADDED BACK: Logout Function
-    // ==========================================
     const logout = () => {
-        localStorage.removeItem('id');
-        localStorage.removeItem('jwtToken');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('isGuest');
-        localStorage.removeItem('firstName');
-        localStorage.removeItem('lastName');
-        localStorage.removeItem('email');
-        // Notice we do NOT remove 'persistentGuestEmail' here!
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.ROLE);
+        localStorage.removeItem(UI_STORAGE_KEYS.USER_DATA);
+        // We purposely leave STORAGE_KEYS.GUEST_EMAIL alone here!
+        
         setUser(null);
     };
 
@@ -105,4 +102,14 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
+};
+
+// 4. Export the custom hook so components don't need to import useContext
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 };

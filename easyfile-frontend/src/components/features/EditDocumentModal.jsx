@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api'; // Adjust path as needed
+import api from '../../services/api'; // Adjust path as needed
 
 export default function EditDocumentModal({ isOpen, onClose, selectedDocs, onSuccess }) {
   const [formData, setFormData] = useState({

@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthProvider';
 import api from '../services/api';
-import DocumentReportModal from '../components/DocumentReportModal'; 
-import EditDocumentModal from '../components/EditDocumentModal'; 
+
+// IMPORT PATHS UPDATED: Make sure these files are moved to your 'features' folder!
+import DocumentReportModal from '../components/features/DocumentReportModal'; 
+import EditDocumentModal from '../components/features/EditDocumentModal'; 
 
 export default function Documents() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const { onOpenUploadModal } = useOutletContext();
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,16 +21,12 @@ export default function Documents() {
   const [searchParams, setSearchParams] = useSearchParams();
   const globalSearchQuery = searchParams.get('q') || '';
 
-  // SORTING & FILTERING STATE
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
     documentTitle: '', caseNumber: '', county: '', status: ''
   });
 
-  // ==========================================
-  // NEW ADMIN STATE: User Dictionary & Popover
-  // ==========================================
   const [userDictionary, setUserDictionary] = useState({});
   const [activePopoverId, setActivePopoverId] = useState(null);
   
@@ -39,7 +37,6 @@ export default function Documents() {
     fetchDocuments();
     window.addEventListener('documentUploaded', fetchDocuments);
     
-    // THE NEW ADMIN DICTIONARY FETCH
     if (user?.role === 'Admin') {
       api.get('/users/all').then(res => {
         const dictionary = {};
@@ -51,7 +48,6 @@ export default function Documents() {
     return () => window.removeEventListener('documentUploaded', fetchDocuments);
   }, [user]);
 
-  // Closes the Admin popover if you click anywhere else
   useEffect(() => {
     const handleClickOutside = () => setActivePopoverId(null);
     document.addEventListener('click', handleClickOutside);
@@ -171,8 +167,10 @@ export default function Documents() {
       if (globalSearchQuery) {
         const q = globalSearchQuery.toLowerCase();
         const searchableText = [
-          doc.fileName || doc.FileName, doc.documentTitle || doc.DocumentTitle,
-          doc.caseNumber || doc.CaseNumber, doc.county || doc.County
+          doc.fileName || doc.FileName || '', 
+          doc.documentTitle || doc.DocumentTitle || '',
+          doc.caseNumber || doc.CaseNumber || '', 
+          doc.county || doc.County || ''
         ].join(' ').toLowerCase();
         passesGlobalSearch = searchableText.includes(q);
       }
@@ -204,7 +202,10 @@ export default function Documents() {
   };
 
   const handleSelectOne = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown Date';
+    return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const getStatusBadge = (status) => {
     const currentStatus = status || 'Processed';
@@ -239,8 +240,8 @@ export default function Documents() {
               if (e.target.value === 'reports') handleDownloadAllReports();
               if (e.target.value === 'files') handleDownloadAllFiles();
               e.target.value = '';
-            }} className="text-sm bg-transparent font-medium text-gray-700 dark:text-gray-300 cursor-pointer outline-none hover:text-blue-600 dark:hover:text-blue-400 w-full sm:w-auto truncate">
-              <option value="" disabled selected>More Actions...</option>
+            }} className="text-sm bg-transparent font-medium text-gray-700 dark:text-gray-300 cursor-pointer outline-none hover:text-blue-600 dark:hover:text-blue-400 w-full sm:w-auto truncate" defaultValue="">
+              <option value="" disabled>More Actions...</option>
               <option value="reports">Download All Reports</option>
               <option value="files">Download All Original Files</option>
             </select>
@@ -254,7 +255,7 @@ export default function Documents() {
         </div>
       </div>
 
-      {/* FILTER BUTTON, ACTIVE SEARCH BADGE, & DROPDOWN PANEL */}
+      {/* FILTER BUTTON & ACTIVE SEARCH BADGE */}
       <div className="mb-4 px-2 relative flex flex-wrap items-center gap-3 z-20">
         <button onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)} className={`flex items-center text-sm font-medium transition px-3 py-1.5 rounded-md ${isFilterMenuOpen || activeFilterCount > 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}>
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
@@ -270,6 +271,7 @@ export default function Documents() {
           </div>
         )}
 
+        {/* DROPDOWN PANEL */}
         {isFilterMenuOpen && (
           <div className="absolute top-full left-0 mt-2 w-full max-w-4xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-4 z-50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -332,7 +334,7 @@ export default function Documents() {
       ) : (
         <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <div className="min-w-275">
+            <div className="min-w-[1000px]">
               
               <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <div className="col-span-1 flex items-center justify-center">
@@ -355,9 +357,6 @@ export default function Documents() {
                       <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
                     </div>
 
-                    {/* ========================================== */}
-                    {/* UPDATED: File Name Column with Initials    */}
-                    {/* ========================================== */}
                     <div className="col-span-2 flex items-center gap-3 pr-4">
                       
                       {user?.role === 'Admin' && (
@@ -407,7 +406,7 @@ export default function Documents() {
                     <div className="col-span-1 flex items-center">{getStatusBadge(doc.status || doc.Status)}</div>
 
                     <div className="col-span-1 flex flex-col">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate || new Date())}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate)}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
                     </div>
 
@@ -435,192 +434,3 @@ export default function Documents() {
     </div>
   );
 }
-
-// import { useState, useEffect } from 'react';
-// import UploadDocumentModal from './UploadDocumentModal';
-// import ReviewModal from './ReviewModal';
-
-// export default function Documents() {
-//   const [documents, setDocuments] = useState([]);
-//   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-//   const [selectedDocument, setSelectedDocument] = useState([]);
-//   const [viewingReport, setViewingReport] = useState(null);
-
-//   const toggleSelection = (id) => {
-//     if (selectedDocument.includes(id)) {
-//       setSelectedDocument(selectedDocument.filter(existingId => existingId !== id));
-//     } else {
-//       setSelectedDocument([...selectedDocument, id]);
-//     }
-//   };
-
-//   const handleDelete = async () => {
-//     try {
-//       const response = await fetch('/api/documents/recycle', {
-//         method: 'DELETE',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(selectedDocument),
-//       });
-
-//       if (!response.ok) {
-//         throw new Error('Failed to recycle documents');
-//       }
-
-//       const remainingDocuments = documents.filter((doc) => !selectedDocument.includes(doc.id));
-//       setDocuments(remainingDocuments);
-//       setSelectedDocument([]);
-
-//     } catch (error) {
-//       console.error('Error recycling documents:', error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const fetchDocuments = async () => {
-//       try {
-//         const response = await fetch('/api/documents');
-//         if (response.ok) {
-//           const data = await response.json();
-//           setDocuments(data);
-//         }
-//       } catch (error) {
-//         console.error("Error fetching documents:", error);
-//       }
-//     };
-
-//     fetchDocuments();
-//   }, []);
-
-
-
-//   return (
-//     <div className="p-8 text-white w-full h-full overflow-y-auto">
-//       {/* 1. Title */}
-//       <h1 className="text-2xl font-bold mb-6">Account Documents</h1>
-
-//       {/* 3. Filter Placeholder & 4. Trash Can Placeholder */}
-//       <div className="flex items-center space-x-4 mb-4 text-gray-400 border-b border-gray-700 pb-2">
-//         <button className="hover:text-white">≡ Filter</button>
-//         {/* We will add the logic to show the 🗑️ trash icon here later */}
-//       </div>
-
-//       {/* The Data Table */}
-//       <div className="w-full border border-gray-700 rounded-md overflow-hidden">
-//         <div className="mb-4">
-//           {selectedDocument.length > 0 && (
-//             <button className="text-red-500 hover:text-red-400 flex items-center gap-2" onClick={handleDelete}>
-//               🗑️ Delete Selected
-//             </button>
-//           )}
-//         </div>
-//         <table className="w-full text-left text-sm text-gray-300">
-//           <thead className="border-b border-gray-700 bg-[#1f1f1f]">
-//             <tr>
-//               <th className="p-4 w-12">
-//                 <input type="checkbox" className="rounded bg-gray-800 border-gray-600" onClick={toggleSelection} />
-//               </th>
-//               <th className="p-4 font-medium">Document</th>
-//               <th className="p-4 font-medium">Status</th>
-//               <th className="p-4 font-medium">Reviewer</th>
-//               <th className="p-4 font-medium">Date</th>
-//               <th className="p-4 font-medium">Report</th>
-//               <th className="p-4 font-medium">Review</th>
-//             </tr>
-//           </thead>
-          
-//           <tbody>
-//             {documents.length === 0 ? (
-//               <tr>
-//                 <td colSpan="7" className="p-12">
-//                   <div className="flex flex-col items-center justify-center text-gray-500 space-y-4">
-//                     {/* 1. Placeholder Image */}
-//                     <div className="w-32 h-32 bg-gray-700 rounded-md flex items-center justify-center">
-//                       <span className="text-4xl">📄</span> {/* Replace with your actual image later */}
-//                     </div>
-                    
-//                     {/* 2. Empty Text */}
-//                     <p>No documents available</p>
-                    
-//                     {/* 3. Upload Button (via Modal Component) */}
-//                     <UploadDocumentModal />
-//                   </div>
-//                 </td>
-//               </tr>
-//             ) : (
-//               documents.map((doc) => (
-//                 <tr key={doc.id} className="border-b border-gray-700 hover:bg-[#2a2a2a]">
-//                   <td className="p-4"><input type="checkbox" className="rounded bg-gray-800 border-gray-600" onClick={() => toggleSelection(doc.id)} /></td>
-//                   <td className="p-4">{doc.name}</td>
-//                   <td className="p-4">{doc.status}</td>
-//                   <td className="p-4">{doc.reviewer}</td>
-//                   <td className="p-4">
-//                     <div>{doc.date}</div>
-//                     <div className="text-xs text-gray-500 mt-1">Uploaded</div>
-//                   </td>
-//                   <td className="p-4">
-//                     {doc.aiReport ? (
-//                       <button 
-//                         onClick={() => setViewingReport(doc.aiReport)}
-//                         className="text-blue-400 hover:text-blue-300 font-medium underline transition"
-//                       >
-//                         View Report
-//                       </button>
-//                     ) : (
-//                       <span className="text-gray-600 italic">No Report</span>
-//                     )}
-//                   </td>
-//                   <td className="p-4">
-//                     <button className="text-blue-400 hover:underline" onClick={() => setIsReviewModalOpen(true)}>
-//                       Leave a Review
-//                     </button>
-//                   </td>
-//                 </tr>
-//               ))
-//             )}
-//           </tbody>
-//         </table>
-//       </div>
-      
-//       {/* Keeping your modal here so it can be triggered */}
-//       <UploadDocumentModal />
-//       {isReviewModalOpen && (
-//         <ReviewModal onClose={() => setIsReviewModalOpen(false)} />
-//       )}
-
-//       {/* NEW: The AI Report Modal */}
-//       {viewingReport && (
-//         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-//           <div className="bg-[#1f1f1f] border border-gray-700 p-6 rounded-lg shadow-xl max-w-2xl w-full m-4">
-//             <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
-//               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-//                 🤖 AI Document Analysis
-//               </h2>
-//               <button 
-//                 onClick={() => setViewingReport(null)}
-//                 className="text-gray-400 hover:text-white transition"
-//               >
-//                 ✕
-//               </button>
-//             </div>
-            
-//             {/* whitespace-pre-wrap ensures the AI's bullet points format correctly! */}
-//             <div className="text-gray-300 whitespace-pre-wrap mb-6 max-h-96 overflow-y-auto leading-relaxed">
-//               {viewingReport}
-//             </div>
-            
-//             <div className="flex justify-end">
-//               <button
-//                 onClick={() => setViewingReport(null)}
-//                 className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded transition"
-//               >
-//                 Close Report
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
