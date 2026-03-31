@@ -8,9 +8,20 @@ namespace EasyFile.Mappings
     {
         public UserProfile()
         {
-            // This single line tells AutoMapper to match properties by name.
+            // Registration Mapping
             CreateMap<RegisterDto, User>()
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+
+            // Profile Update Mapping (Only maps the email if it's not empty!)
+            CreateMap<UpdateProfileDto, User>()
+                .ForMember(dest => dest.Email, opt => 
+                {
+                    opt.PreCondition(src => !string.IsNullOrWhiteSpace(src.Email));
+                    opt.MapFrom(src => src.Email);
+                });
+
+            // Admin Update Mapping
+            CreateMap<AdminUpdateUserDto, User>();
         }
     }
 }

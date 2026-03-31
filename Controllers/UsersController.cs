@@ -1,12 +1,15 @@
-using System.IO;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models.DTOs;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
 
 namespace EasyFile.Controllers
 {
@@ -17,15 +20,18 @@ namespace EasyFile.Controllers
         private readonly AppDbContext _dbContext;
         private readonly IDocumentService _documentService;
         private readonly ILogger<UsersController> _logger;
+        private readonly IMapper _mapper;
 
         public UsersController(
             AppDbContext dbContext, 
             IDocumentService documentService,
-            ILogger<UsersController> logger) 
+            ILogger<UsersController> logger,
+            IMapper mapper) 
         {
             _dbContext = dbContext;
             _documentService = documentService;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [Authorize]
@@ -40,11 +46,7 @@ namespace EasyFile.Controllers
                 var user = await _dbContext.Users.FindAsync(userId);
                 if (user == null) return NotFound(new { message = "User not found." });
 
-                user.FirstName = request.FirstName;
-                user.LastName = request.LastName;
-                user.BusinessName = request.BusinessName;
-                if (!string.IsNullOrWhiteSpace(request.Email)) user.Email = request.Email;
-                user.Phone = request.Phone;
+                _mapper.Map(request, user);
 
                 await _dbContext.SaveChangesAsync();
 
@@ -118,12 +120,7 @@ namespace EasyFile.Controllers
                 var user = await _dbContext.Users.FindAsync(id);
                 if (user == null) return NotFound(new { message = "User not found." });
 
-                user.FirstName = request.FirstName;
-                user.LastName = request.LastName;
-                user.BusinessName = request.BusinessName;
-                user.Email = request.Email;
-                user.Phone = request.Phone;
-                user.AccountType = request.AccountType;
+                _mapper.Map(request, user);
 
                 await _dbContext.SaveChangesAsync();
                 return Ok(new { message = "User updated successfully." });
@@ -197,20 +194,5 @@ namespace EasyFile.Controllers
                 return StatusCode(500, new { message = "An error occurred while reactivating the user." });
             }
         }
-    }
-
-    public class UpdateProfileDto
-    {
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public string? BusinessName { get; set; }
-        public string? Phone { get; set; }
-        public string? Email { get; set; }
-    }
-
-    public class UpdatePasswordDto
-    {
-        public required string CurrentPassword { get; set; }
-        public required string NewPassword { get; set; }
     }
 }
