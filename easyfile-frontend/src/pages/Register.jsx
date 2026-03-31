@@ -67,7 +67,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
       
       <div className="sm:mx-auto sm:w-full sm:max-w-xl transition-all">
         <div className="flex flex-col items-center mb-8">

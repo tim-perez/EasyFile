@@ -87,7 +87,7 @@ export default function DashboardLayout() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
       
       <header className="relative h-16 shrink-0 flex items-center justify-between px-4 sm:px-6 border-b transition-colors duration-300 bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800 z-30">
         
