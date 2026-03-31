@@ -35,6 +35,7 @@
     <Folder Include="Interfaces/" />
     <Folder Include="Mappings/" />
     <Folder Include="Middlewares/" />
+    <Folder Include="Models/Pagination/" />
     <Folder Include="Repositories/" />
     <Folder Include="Services/" />
     <Folder Include="Validators/" />

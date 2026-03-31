@@ -10,6 +10,7 @@ using AutoMapper;
 using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models.DTOs;
+using EasyFile.Models.Pagination;
 
 namespace EasyFile.Controllers
 {
@@ -109,7 +110,7 @@ namespace EasyFile.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDocuments()
+        public async Task<IActionResult> GetDocuments([FromQuery] DocumentQueryParameters queryParams)
         {
             try
             {
@@ -119,14 +120,64 @@ namespace EasyFile.Controllers
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
                 var query = _dbContext.Documents.Where(d => d.Recycled == false);
 
+                // 1. Role-based filtering
                 if (userRole != "Admin") query = query.Where(d => d.UploaderId == userId);
 
-                var documents = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
-                return Ok(documents);
+                // 2. Apply Server-Side Filters
+                if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
+                {
+                    var search = queryParams.SearchTerm.ToLower();
+                    query = query.Where(d => 
+                        (d.FileName != null && d.FileName.ToLower().Contains(search)) ||
+                        (d.DocumentTitle != null && d.DocumentTitle.ToLower().Contains(search)) ||
+                        (d.CaseNumber != null && d.CaseNumber.ToLower().Contains(search)) ||
+                        (d.County != null && d.County.ToLower().Contains(search)));
+                }
+
+                if (!string.IsNullOrWhiteSpace(queryParams.DocumentTitle))
+                    query = query.Where(d => d.DocumentTitle == queryParams.DocumentTitle);
+                if (!string.IsNullOrWhiteSpace(queryParams.CaseNumber))
+                    query = query.Where(d => d.CaseNumber == queryParams.CaseNumber);
+                if (!string.IsNullOrWhiteSpace(queryParams.County))
+                    query = query.Where(d => d.County == queryParams.County);
+                if (!string.IsNullOrWhiteSpace(queryParams.Status))
+                    query = query.Where(d => d.Status == queryParams.Status);
+
+                // 3. Count total records BEFORE paginating (needed for the frontend UI)
+                var totalCount = await query.CountAsync();
+
+                // 4. Apply Server-Side Sorting
+                bool isDesc = queryParams.SortDirection?.ToLower() == "desc";
+                query = queryParams.SortColumn?.ToLower() switch
+                {
+                    "filename" => isDesc ? query.OrderByDescending(d => d.FileName) : query.OrderBy(d => d.FileName),
+                    "documenttitle" => isDesc ? query.OrderByDescending(d => d.DocumentTitle) : query.OrderBy(d => d.DocumentTitle),
+                    "casenumber" => isDesc ? query.OrderByDescending(d => d.CaseNumber) : query.OrderBy(d => d.CaseNumber),
+                    "county" => isDesc ? query.OrderByDescending(d => d.County) : query.OrderBy(d => d.County),
+                    "status" => isDesc ? query.OrderByDescending(d => d.Status) : query.OrderBy(d => d.Status),
+                    _ => isDesc ? query.OrderByDescending(d => d.CreatedAt) : query.OrderBy(d => d.CreatedAt) // Default is Date
+                };
+
+                // 5. Apply Server-Side Pagination
+                var documents = await query
+                    .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+                    .Take(queryParams.PageSize)
+                    .ToListAsync();
+
+                // 6. Return the standard wrapper
+                var result = new PagedResult<EasyFile.Models.Document>
+                {
+                    Items = documents,
+                    TotalCount = totalCount,
+                    PageNumber = queryParams.PageNumber,
+                    PageSize = queryParams.PageSize
+                };
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch documents.");
+                _logger.LogError(ex, "Failed to fetch paginated documents.");
                 return StatusCode(500, new { message = "Failed to fetch documents." });
             }
         }
