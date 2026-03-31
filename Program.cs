@@ -13,6 +13,8 @@ using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Middlewares;
 using EasyFile.Services;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,11 +106,23 @@ builder.Services.AddScoped<IPdfReportService, PdfReportService>();
 builder.Services.AddHostedService<GuestCleanupService>();
 
 // ==========================================
-// 8. MIDDLEWARE PIPELINE
+// 8. MAPPING & VALIDATION
+// ==========================================
+builder.Services.AddAutoMapper(cfg => 
+{
+    cfg.AddMaps(typeof(Program).Assembly);
+});
+builder.Services.AddFluentValidationAutoValidation()
+                .AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+
+// ==========================================
+// 9. MIDDLEWARE PIPELINE
 // ==========================================
 var app = builder.Build();
 
-app.UseExceptionHandler(); // Placed at the top to catch everything downstream
+app.UseExceptionHandler(); 
 
 if (app.Environment.IsDevelopment())
 {

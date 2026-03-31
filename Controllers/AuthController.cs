@@ -1,11 +1,10 @@
-using System.IO;
-using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using AutoMapper;
 using EasyFile.Data;
 using EasyFile.Models;
 using EasyFile.Models.DTOs;
@@ -18,14 +17,15 @@ namespace EasyFile.Controllers
     {
         private readonly AppDbContext _dbContext;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        // Note: In a production environment, consider moving this to appsettings.json or AWS Secrets Manager
         private const string AdminSecret = "ADMIN-SECRET-2026"; 
 
-        public AuthController(AppDbContext dbContext, IConfiguration configuration)
+        public AuthController(AppDbContext dbContext, IConfiguration configuration, IMapper mapper)
         {
             _dbContext = dbContext;
             _configuration = configuration;
+            _mapper = mapper;
         }
 
         [HttpPost("register")]
@@ -44,16 +44,8 @@ namespace EasyFile.Controllers
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-            var newUser = new User 
-            { 
-                AccountType = request.AccountType,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                BusinessName = request.BusinessName,
-                Email = request.Email,
-                Phone = request.Phone,
-                PasswordHash = passwordHash
-            };
+            var newUser = _mapper.Map<User>(request);
+            newUser.PasswordHash = passwordHash;
 
             _dbContext.Users.Add(newUser);
             await _dbContext.SaveChangesAsync();
@@ -66,31 +58,19 @@ namespace EasyFile.Controllers
         {
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             
-            if (user == null) 
+            if (user == null || user.AccountType == "Banned") 
             {
-                return Unauthorized(new { message = "Invalid credentials." });
-            }
-
-            if (user.AccountType == "Banned") 
-            {
-                return Unauthorized(new { message = "This account has been deactivated. Please contact support." });
+                return Unauthorized(new { message = user?.AccountType == "Banned" ? "This account has been deactivated. Please contact support." : "Invalid credentials." });
             }
 
             bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-            if (!isValid) 
-            {
-                return Unauthorized(new { message = "Invalid credentials." });
-            }
+            if (!isValid) return Unauthorized(new { message = "Invalid credentials." });
 
             var token = GenerateJwtToken(user);
 
             return Ok(new { 
-                id = user.Id,
-                token = token, 
-                role = user.AccountType,
-                firstName = user.FirstName,
-                lastName = user.LastName,
-                email = user.Email,
+                id = user.Id, token = token, role = user.AccountType,
+                firstName = user.FirstName, lastName = user.LastName, email = user.Email,
                 message = "Login successful."
             });
         }
@@ -115,10 +95,7 @@ namespace EasyFile.Controllers
                 guestUser = new User 
                 { 
                     Email = $"guest_{Guid.NewGuid().ToString().Substring(0, 8)}@easyfile.com",
-                    AccountType = "Guest", 
-                    FirstName = "Guest",
-                    LastName = "User",
-                    PasswordHash = "" 
+                    AccountType = "Guest", FirstName = "Guest", LastName = "User", PasswordHash = "" 
                 };
 
                 _dbContext.Users.Add(guestUser);
@@ -128,21 +105,15 @@ namespace EasyFile.Controllers
             var token = GenerateJwtToken(guestUser);
 
             return Ok(new { 
-                id = guestUser.Id, 
-                token = token, 
-                role = guestUser.AccountType, 
-                firstName = guestUser.FirstName, 
-                lastName = guestUser.LastName,
-                email = guestUser.Email,
+                id = guestUser.Id, token = token, role = guestUser.AccountType, 
+                firstName = guestUser.FirstName, lastName = guestUser.LastName, email = guestUser.Email,
                 message = "Guest login successful."
             });
         }
 
         private string GenerateJwtToken(User user)
         {
-            var secretKey = _configuration["JwtSettings:SecretKey"] 
-                ?? throw new InvalidOperationException("JWT Secret is missing.");
-            
+            var secretKey = _configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret is missing.");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -155,12 +126,7 @@ namespace EasyFile.Controllers
                 new Claim("LastName", user.LastName)
             };
 
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
-                signingCredentials: creds
-            );
-
+            var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddHours(2), signingCredentials: creds);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }

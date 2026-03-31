@@ -56,9 +56,17 @@
               "target": "Package",
               "version": "[4.0.3.16, )"
             },
+            "AutoMapper": {
+              "target": "Package",
+              "version": "[16.1.1, )"
+            },
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.1.0, )"
+            },
+            "FluentValidation.AspNetCore": {
+              "target": "Package",
+              "version": "[11.3.1, )"
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
