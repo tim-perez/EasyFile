@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Public Pages
 import Login from './pages/Login';
@@ -9,11 +9,11 @@ import Register from './pages/Register';
 
 // Protected Pages
 import DashboardLayout from './layouts/DashboardLayout';
-import Dashboard from './components/Dashboard';
-import Documents from './components/Documents';
-import RecycleBin from './components/RecycleBin';
-import Account from './components/Account';
-import Users from './components/Users';
+import Dashboard from './pages/Dashboard';
+import Documents from './pages/Documents';
+import RecycleBin from './pages/RecycleBin';
+import Account from './pages/Account';
+import Users from './pages/Users';
 
 function App() {
     return (

@@ -2,13 +2,12 @@ import React from 'react';
 
 export default function InformationWidgets() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-full flex flex-col">
       
-      {/* 📺 TUTORIAL WIDGET */}
+      {/* TUTORIAL WIDGET */}
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Tutorial: Upload a Document</h2>
         
-        {/* Video Placeholder - Matches YT Studio Dark Sidebar */}
         <div className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800">
            <div className="flex flex-col items-center gap-2">
              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
@@ -31,8 +30,8 @@ export default function InformationWidgets() {
         </button>
       </div>
 
-      {/* 🔗 CONNECT WITH DEVELOPER WIDGET */}
-      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+      {/* CONNECT WITH DEVELOPER WIDGET */}
+      <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex-1">
         <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Connect with the Developer</h2>
         <div className="flex flex-col gap-1">
           

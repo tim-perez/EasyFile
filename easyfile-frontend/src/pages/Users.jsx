@@ -1,24 +1,23 @@
-import { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthProvider';
 import api from '../services/api';
 
 export default function Users() {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState(''); // NEW: Inline error for the main page
   
-  // Filtering & Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   
-  // Selection State (Updated to match Documents.jsx array pattern)
   const [selectedIds, setSelectedIds] = useState([]);
   
-  // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [editError, setEditError] = useState(''); // NEW: Inline error for the modal
   const [editFormData, setEditFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '', businessName: '', accountType: '', newPassword: ''
   });
@@ -32,19 +31,18 @@ export default function Users() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setPageError('');
       const response = await api.get('/users/all');
       setUsers(response.data);
-      setSelectedIds([]); // Clear selections on fetch
+      setSelectedIds([]); 
     } catch (error) {
       console.error("Failed to fetch users", error);
+      setPageError("Failed to load user data. Please refresh the page.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ==========================================
-  // FILTERING & SORTING PIPELINE
-  // ==========================================
   const processedUsers = useMemo(() => {
     let filtered = users.filter(u => {
       const matchesSearch = 
@@ -70,9 +68,6 @@ export default function Users() {
     });
   }, [users, searchQuery, roleFilter, sortConfig]);
 
-  // ==========================================
-  // ACTIONS
-  // ==========================================
   const handleSelectAll = (e) => {
     if (e.target.checked) setSelectedIds(processedUsers.map(u => u.id));
     else setSelectedIds([]);
@@ -86,27 +81,30 @@ export default function Users() {
 
   const handleBulkBan = async () => {
     if (!window.confirm(`You are about to deactivate ${selectedIds.length} user(s). They will no longer be able to log in, but their documents will be saved. Proceed?`)) return;
+    setPageError('');
     try {
       await Promise.all(selectedIds.map(id => api.put(`/users/admin-ban/${id}`)));
       fetchUsers();
     } catch (error) {
       console.error("Failed to ban users", error);
-      alert("An error occurred while deactivating users.");
+      setPageError("An error occurred while deactivating users.");
     }
   };
 
   const handleBulkUnban = async () => {
     if (!window.confirm(`You are about to reactivate ${selectedIds.length} user(s). They will regain full access to their accounts. Proceed?`)) return;
+    setPageError('');
     try {
       await Promise.all(selectedIds.map(id => api.put(`/users/admin-unban/${id}`)));
       fetchUsers();
     } catch (error) {
       console.error("Failed to unban users", error);
-      alert("An error occurred while reactivating users.");
+      setPageError("An error occurred while reactivating users.");
     }
   };
 
   const openEditModal = (u) => {
+    setEditError('');
     setEditingUser(u);
     setEditFormData({
       firstName: u.firstName, lastName: u.lastName, email: u.email, 
@@ -118,6 +116,7 @@ export default function Users() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setEditError('');
     try {
       await api.put(`/users/admin-update/${editingUser.id}`, {
         firstName: editFormData.firstName, lastName: editFormData.lastName,
@@ -133,7 +132,7 @@ export default function Users() {
       fetchUsers();
     } catch (error) {
       console.error("Failed to update user", error);
-      alert("Failed to save user updates.");
+      setEditError(error.response?.data?.message || "Failed to save user updates.");
     }
   };
 
@@ -172,6 +171,12 @@ export default function Users() {
           </select>
         </div>
       </div>
+
+      {pageError && (
+        <div className="mb-4 p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
+          {pageError}
+        </div>
+      )}
 
       {/* SMOOTH ANIMATED ACTION BAR */}
       <div className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedIds.length > 0 ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
@@ -277,6 +282,13 @@ export default function Users() {
             </div>
             
             <form onSubmit={handleEditSubmit} className="p-6 overflow-y-auto max-h-[70vh]">
+              
+              {editError && (
+                <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
+                  {editError}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>

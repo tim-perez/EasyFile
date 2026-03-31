@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../context/AuthProvider';
 import api from '../services/api';
-import ReviewModal from './ReviewModal'; 
+import ReviewModal from '../components/features/ReviewModal'; 
 
 export default function RecycleBin() {
-  const { user } = useContext(AuthContext); // <-- 1. Get the current user
+  const { user } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,12 +12,10 @@ export default function RecycleBin() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
-  // NEW ADMIN STATE: User Dictionary & Popover
   const [userDictionary, setUserDictionary] = useState({});
   const [activePopoverId, setActivePopoverId] = useState(null);
 
-  // SORTING & FILTERING STATE
-  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' }); // Default: Latest deleted date
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
     documentTitle: '',
@@ -29,7 +27,6 @@ export default function RecycleBin() {
   useEffect(() => {
     fetchRecycledDocuments();
 
-    // 2. Fetch the User Dictionary if they are an Admin
     if (user?.role === 'Admin') {
       api.get('/users/all').then(res => {
         const dictionary = {};
@@ -39,7 +36,6 @@ export default function RecycleBin() {
     }
   }, [user]);
 
-  // 3. Closes the Admin popover if you click anywhere else
   useEffect(() => {
     const handleClickOutside = () => setActivePopoverId(null);
     document.addEventListener('click', handleClickOutside);
@@ -60,9 +56,6 @@ export default function RecycleBin() {
     }
   };
 
-  // ==========================================
-  // CHECKBOX & ACTION LOGIC
-  // ==========================================
   const handleSelectAll = (e) => {
     if (e.target.checked) setSelectedIds(processedDocuments.map(doc => doc.id));
     else setSelectedIds([]);
@@ -115,12 +108,10 @@ export default function RecycleBin() {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown Date';
     return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // ==========================================
-  // FILTERING & SORTING PIPELINE
-  // ==========================================
   const uniqueOptions = useMemo(() => {
     return {
       titles: [...new Set(documents.map(d => d.documentTitle || d.DocumentTitle).filter(Boolean))],
@@ -207,7 +198,6 @@ export default function RecycleBin() {
     <div className="max-w-7xl mx-auto w-full relative pb-12">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Recycle Bin</h1>
 
-      {/* SMOOTH ANIMATED ACTION BAR */}
       <div className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedIds.length > 0 ? 'max-h-40 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
         <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg px-4 py-3 flex flex-wrap lg:flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-6">
@@ -228,7 +218,6 @@ export default function RecycleBin() {
         </div>
       </div>
 
-      {/* FILTER BUTTON & PANEL */}
       <div className="mb-4 px-2 relative">
         <button 
           onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
@@ -279,7 +268,7 @@ export default function RecycleBin() {
 
       <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-275">
+          <div className="min-w-250">
             
             <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <div className="col-span-1 flex items-center justify-center">
@@ -323,9 +312,6 @@ export default function RecycleBin() {
                       <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
                     </div>
 
-                    {/* ========================================== */}
-                    {/* UPDATED: File Name Column with Initials    */}
-                    {/* ========================================== */}
                     <div className="col-span-2 flex items-center gap-3 pr-4 opacity-60">
                       {user?.role === 'Admin' && (
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>

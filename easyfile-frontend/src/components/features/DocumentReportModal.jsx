@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import api from '../services/api'; 
+import api from '../../services/api'; 
 
 export default function DocumentReportModal({ isOpen, onClose, document }) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen || !document) return null;
 
-  // NEW: Convert the C# pipeline string ("Warning 1|Warning 2") back into an array
+  // Convert the C# pipeline string ("Warning 1|Warning 2") back into an array
   const realWarnings = document?.warnings || document?.Warnings
     ? (document.warnings || document.Warnings).split('|').filter(w => w.trim() !== '') 
     : [];
@@ -31,7 +31,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
 
     } catch (error) {
       console.error("Download Error:", error);
-      alert("The backend PDF generator is not connected yet! We need to build the C# endpoint.");
+      alert("Failed to download the PDF report. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -40,6 +40,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 transition-opacity backdrop-blur-sm p-6 md:p-12">      
       <div className="bg-white dark:bg-[#1f1f1f] w-full max-w-4xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col transition-all overflow-hidden border border-gray-200 dark:border-gray-800">        
+        
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a]">
           <div>
@@ -52,7 +53,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
                 File: <span className="font-medium text-gray-700 dark:text-gray-300">{document.fileName || document.FileName}</span>
               </p>
               
-              {/* NEW: Dynamic Prediction Badge */}
+              {/* Dynamic Prediction Badge */}
               <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${
                 (document.prediction || document.Prediction) === 'Likely Rejected' 
                   ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800' 
@@ -75,124 +76,117 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
 
         {/* Modal Body */}
         <div className="overflow-y-auto p-6 flex-1 bg-white dark:bg-[#1f1f1f]">
-          <div className="bg-white dark:bg-[#1f1f1f] pb-4 px-2">
-            
-            {/* 🔴 PRE-FLIGHT REJECTION WARNINGS */}
-            <div className="mb-8 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10 rounded-xl overflow-hidden">
-              <div className="bg-red-100 dark:bg-red-900/30 px-4 py-3 border-b border-red-200 dark:border-red-900/50 flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                <h3 className="font-semibold text-red-800 dark:text-red-300">Pre-Flight Rejection Warnings</h3>
-              </div>
-              <ul className="p-4 space-y-2">
-                {/* DYNAMIC: Map over the real warnings from the AI */}
-                {realWarnings.length > 0 ? (
-                  realWarnings.map((warning, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400">
-                      <span className="mt-0.5 text-red-500">•</span>
-                      {warning}
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-sm text-green-700 dark:text-green-400 font-medium">
-                    No critical issues detected by AI.
-                  </li>
-                )}
-              </ul>
+          
+          {/* 🔴 PRE-FLIGHT REJECTION WARNINGS */}
+          <div className="mb-8 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10 rounded-xl overflow-hidden">
+            <div className="bg-red-100 dark:bg-red-900/30 px-4 py-3 border-b border-red-200 dark:border-red-900/50 flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <h3 className="font-semibold text-red-800 dark:text-red-300">Pre-Flight Rejection Warnings</h3>
             </div>
+            <ul className="p-4 space-y-2">
+              {realWarnings.length > 0 ? (
+                realWarnings.map((warning, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400">
+                    <span className="mt-0.5 text-red-500">•</span>
+                    {warning}
+                  </li>
+                ))
+              ) : (
+                <li className="text-sm text-green-700 dark:text-green-400 font-medium">
+                  No critical issues detected by AI.
+                </li>
+              )}
+            </ul>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* 🏛 1. Setup & Categorization */}
+            <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">1. Setup & Categorization</h3>
+              <div className="grid grid-cols-1 gap-4">
               
-              {/* 🏛 1. Setup & Categorization */}
-              <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">1. Setup & Categorization</h3>
-                <div className="grid grid-cols-1 gap-4">
-                
-                  <div className="w-full bg-white dark:bg-[#282828] p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Case Title / Name</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseTitle || document.CaseTitle || 'Unknown'}</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Filing Type</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
-                        {document.filingType || document.FilingType || 'Unknown'}
-                        
-                        {/* NEW: If it's a subsequent filing, boldly inject the real Case Number! */}
-                        {(document.filingType === 'Subsequent Filing' || document.FilingType === 'Subsequent Filing') && 
-                         (document.caseNumber !== 'Missing' && document.CaseNumber !== 'Missing') && (
-                          <span className="text-xs font-bold text-gray-600 dark:text-gray-400 ml-1">
-                            ({document.caseNumber || document.CaseNumber})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Case Category</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseCategory || document.CaseCategory || 'Unknown'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Case Type</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseType || document.CaseType || 'Unknown'}</p>
-                    </div>
-                  </div>
-                  
+                <div className="w-full bg-white dark:bg-[#282828] p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Case Title / Name</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseTitle || document.CaseTitle || 'Unknown'}</p>
                 </div>
-              </div>
 
-              {/* ⚖️ 2. Parties & Representation */}
-              <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">2. Parties & Representation</h3>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Filed By (On Behalf Of)</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.filedBy || document.FiledBy || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Filing Type</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                      {document.filingType || document.FilingType || 'Unknown'}
+                      {(document.filingType === 'Subsequent Filing' || document.FilingType === 'Subsequent Filing') && 
+                        (document.caseNumber !== 'Missing' && document.CaseNumber !== 'Missing') && (
+                        <span className="text-xs font-bold text-gray-600 dark:text-gray-400 ml-1">
+                          ({document.caseNumber || document.CaseNumber})
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Refers To (As To)</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.refersTo || document.RefersTo || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Case Category</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseCategory || document.CaseCategory || 'Unknown'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Representation</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.representation || document.Representation || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Case Type</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.caseType || document.CaseType || 'Unknown'}</p>
                   </div>
                 </div>
+                
               </div>
-
-              {/* 📑 3. Document Specifics */}
-              <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a] md:col-span-2">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">3. Document Specifics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">E-Filing Document Type</p>
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{document.eFilingDocType || document.EFilingDocType || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Exact Document Title</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate" title={document.documentTitle || document.DocumentTitle}>{document.documentTitle || document.DocumentTitle || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Estimated Filing Fee</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.estimatedFee || document.EstimatedFee || '$0.00'}</p>
-                  </div>
-                </div>
-              </div>
-
             </div>
+
+            {/* ⚖️ 2. Parties & Representation */}
+            <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">2. Parties & Representation</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Filed By (On Behalf Of)</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.filedBy || document.FiledBy || 'Unknown'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Refers To (As To)</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.refersTo || document.RefersTo || 'Unknown'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Representation</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.representation || document.Representation || 'Unknown'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 📑 3. Document Specifics */}
+            <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a] md:col-span-2">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">3. Document Specifics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">E-Filing Document Type</p>
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{document.eFilingDocType || document.EFilingDocType || 'Unknown'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Exact Document Title</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate" title={document.documentTitle || document.DocumentTitle}>{document.documentTitle || document.DocumentTitle || 'Unknown'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Estimated Filing Fee</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200">{document.estimatedFee || document.EstimatedFee || '$0.00'}</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
         
-        {/* Modal Body ends up here... */}
-
         {/* NEW: Legal Disclaimer */}
-        <div className="px-6 py-3 bg-gray-100 dark:bg-[#151515] border-t border-gray-200 dark:border-gray-800">
+        <div className="px-6 py-3 bg-gray-100 dark:bg-[#151515] border-t border-gray-200 dark:border-gray-800 shrink-0">
            <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center italic leading-relaxed">
              Disclaimer: This intelligence report is generated by an automated AI system and is intended for informational and organizational purposes only. It does not constitute formal legal advice. Court clerks maintain ultimate authority and may reject filings for reasons not identified in this report. Always review your documents carefully before submission.
            </p>
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] flex justify-end gap-3 shrink-0">
           <button 
             onClick={onClose} 
             disabled={isDownloading}

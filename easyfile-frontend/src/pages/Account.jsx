@@ -1,11 +1,12 @@
-import { useState, useContext, useEffect } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthProvider';
 import api from '../services/api';
 
 export default function Account() {
-  const { user, updateUserContext } = useContext(AuthContext); 
+  const { user, updateUserContext } = useAuth(); 
+  const navigate = useNavigate();
 
-  // State for Personal Info Form (Expanded to match Register.jsx)
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
@@ -18,7 +19,6 @@ export default function Account() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
 
-  // State for Password Form
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -27,7 +27,6 @@ export default function Account() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
 
-  // Pre-fill the form with the user's data when the component loads
   useEffect(() => {
     if (user && !user.isGuest) {
       setProfileData({
@@ -41,9 +40,6 @@ export default function Account() {
     }
   }, [user]);
 
-  // ==========================================
-  // HANDLERS
-  // ==========================================
   const handleProfileChange = (e) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
     setProfileMessage({ type: '', text: '' }); 
@@ -60,7 +56,6 @@ export default function Account() {
     setProfileMessage({ type: '', text: '' });
 
     try {
-      // Assuming you have a PUT endpoint to update user info
       await api.put('/users/profile', {
         firstName: profileData.firstName,
         lastName: profileData.lastName,
@@ -70,11 +65,8 @@ export default function Account() {
       });
 
       updateUserContext(profileData.firstName, profileData.lastName, profileData.email);
-
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' });
       
-      // If your AuthContext has a way to update the current user session (like a reload user function), call it here:
-      // if (login) login(response.data.token); 
     } catch (error) {
       console.error("Failed to update profile", error);
       setProfileMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update profile.' });
@@ -115,9 +107,6 @@ export default function Account() {
     }
   };
 
-  // ==========================================
-  // GUEST STATE
-  // ==========================================
   if (user?.isGuest) {
     return (
       <div className="max-w-4xl mx-auto w-full py-12 px-4 sm:px-6">
@@ -130,7 +119,7 @@ export default function Account() {
             You are currently using a Guest Session. To edit account details, save your document history permanently, and increase your upload limits, please register for a free account.
           </p>
           <button 
-            onClick={() => window.location.href = '/login'} 
+            onClick={() => navigate('/login')} 
             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors"
           >
             Register Now
@@ -140,9 +129,6 @@ export default function Account() {
     );
   }
 
-  // ==========================================
-  // AUTHENTICATED STATE
-  // ==========================================
   return (
     <div className="max-w-4xl mx-auto w-full pb-12">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Account Settings</h1>
@@ -154,14 +140,12 @@ export default function Account() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Information</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Update your basic profile details and contact information.</p>
           </div>
-          {/* Read-Only Account Type Badge */}
           <span className="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
             {profileData.accountType} Account
           </span>
         </div>
         
         <form onSubmit={handleSaveProfile} className="p-6">
-          
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">First Name *</label>
@@ -186,7 +170,6 @@ export default function Account() {
               />
             </div>
 
-            {/* Business Name expands across full width on mobile, 1 col on desktop */}
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Business Name (Optional)</label>
               <input

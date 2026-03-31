@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../../services/api'; 
-import UploadDocumentModal from '../features/UploadDocumentModal'; // Adjust path if needed
-import DocumentReportModal from '../DocumentReportModal'; // Adjust path if needed
+import api from '../../../services/api'; 
+import UploadDocumentModal from '../UploadDocumentModal'; 
+import DocumentReportModal from '../DocumentReportModal'; 
 
 export default function ActionWidget() {
   const [recentDocuments, setRecentDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Modal States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedReportDoc, setSelectedReportDoc] = useState(null);
 
-  // Fetch the 5 most recent documents on load
   const fetchRecentDocuments = async () => {
     try {
       setIsLoading(true);
       const response = await api.get('/documents');
-      // The API already sorts by CreatedAt DESC, so we just slice the top 5!
       setRecentDocuments(response.data.slice(0, 5));
     } catch (error) {
       console.error("Failed to fetch recent documents:", error);
@@ -29,25 +25,24 @@ export default function ActionWidget() {
 
   useEffect(() => {
     fetchRecentDocuments();
+    
+    // NEW: Listen for the global event we set up in the Upload Modal!
+    window.addEventListener('documentUploaded', fetchRecentDocuments);
+    return () => window.removeEventListener('documentUploaded', fetchRecentDocuments);
   }, []);
 
-  // Securely fetch the AWS URL and open the PDF in a new tab
   const handleViewDocument = async (id) => {
     try {
       const response = await api.get(`/documents/${id}/url`);
       window.open(response.data.url, '_blank');
     } catch (error) {
       console.error("Error fetching document URL:", error);
-      alert("Could not load the document. Please try again.");
     }
   };
 
   return (
-    // We use h-full to ensure it matches the height of the other widgets in the grid
-    <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl flex flex-col h-full min-h-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl flex flex-col h-full min-h-100 shadow-sm overflow-hidden transition-all duration-300">
       
-      {/* STATE 1: LOADING
-      */}
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
            <svg className="animate-spin w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24">
@@ -56,11 +51,9 @@ export default function ActionWidget() {
            </svg>
         </div>
       ) : recentDocuments.length === 0 ? (
-        /* STATE 2: EMPTY (No Documents) - Shows the giant call to action
-        */
         <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-          <div className="w-32 h-32 mb-6 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-full">
-            <svg className="w-16 h-16 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-24 h-24 mb-6 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 rounded-full">
+            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -77,10 +70,7 @@ export default function ActionWidget() {
           </button>
         </div>
       ) : (
-        /* STATE 3: POPULATED (1 to 5 Documents) - Shows the recent list
-        */
         <div className="flex-1 flex flex-col h-full">
-          {/* Widget Header */}
           <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Recent Uploads</h2>
             <button 
@@ -92,12 +82,10 @@ export default function ActionWidget() {
             </button>
           </div>
 
-          {/* Document List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {recentDocuments.map((doc) => (
               <div key={doc.id || doc.Id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#232323] hover:bg-gray-100 dark:hover:bg-[#2a2a2a] rounded-xl transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
                 
-                {/* File Icon & Secure Link */}
                 <div className="flex items-center gap-3 overflow-hidden pr-4">
                   <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
@@ -111,7 +99,6 @@ export default function ActionWidget() {
                   </button>
                 </div>
 
-                {/* View Report Button */}
                 <button 
                   onClick={() => {
                     setSelectedReportDoc(doc);
@@ -127,14 +114,9 @@ export default function ActionWidget() {
         </div>
       )}
 
-      {/* --- MODALS --- */}
       <UploadDocumentModal
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
-        onUploadSuccess={() => {
-          setIsUploadModalOpen(false);
-          fetchRecentDocuments(); // Instantly refresh the list after a successful upload!
-        }} 
       />
 
       <DocumentReportModal 
