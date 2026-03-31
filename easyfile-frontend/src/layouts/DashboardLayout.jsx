@@ -89,7 +89,7 @@ export default function DashboardLayout() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
       
-      <header className="relative h-16 shrink-0 flex items-center justify-between px-4 sm:px-6 border-b transition-colors duration-300 bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800 z-30">
+     <header className="relative h-16 shrink-0 flex items-center justify-between px-4 sm:px-6 border-b bg-white border-gray-200 dark:bg-[#1f1f1f] dark:border-gray-800 z-30">
         
         {isSearchOpen && (
           <div className="absolute inset-0 z-50 flex items-center bg-white dark:bg-[#1f1f1f] px-4 sm:px-6 w-full h-full">
@@ -405,7 +405,7 @@ export default function DashboardLayout() {
           </nav>
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 transition-colors duration-300 bg-gray-50 dark:bg-[#121212]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-[#121212]">
           <Outlet context={{ onOpenUploadModal: () => setIsUploadModalOpen(true) }} />
         </main>
       </div>
