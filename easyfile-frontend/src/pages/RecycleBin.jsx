@@ -1,32 +1,28 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthProvider';
+import { useDocuments } from '../hooks/useDocuments';
 import api from '../services/api';
+
+import SortableHeader from '../components/common/SortableHeader';
 import ReviewModal from '../components/features/ReviewModal'; 
 
 export default function RecycleBin() {
   const { user } = useAuth();
-  const [documents, setDocuments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   
-  const [selectedIds, setSelectedIds] = useState([]);
+  // 1. Reusing our custom hook by passing the specific endpoint!
+  const {
+    documents: processedDocuments, originalDocuments, isLoading, error, fetchDocuments,
+    selectedIds, handleSelectAll, handleSelectOne, sortConfig, handleSort,
+    activeFilters, setActiveFilters, uniqueOptions
+  } = useDocuments('/documents/recycle');
+
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   const [userDictionary, setUserDictionary] = useState({});
   const [activePopoverId, setActivePopoverId] = useState(null);
 
-  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState({
-    documentTitle: '',
-    caseNumber: '',
-    county: '',
-    status: ''
-  });
-
   useEffect(() => {
-    fetchRecycledDocuments();
-
     if (user?.role === 'Admin') {
       api.get('/users/all').then(res => {
         const dictionary = {};
@@ -42,33 +38,10 @@ export default function RecycleBin() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const fetchRecycledDocuments = async () => {
-    try {
-      setIsLoading(true);
-      const response = await api.get('/documents/recycle'); 
-      setDocuments(response.data);
-      setSelectedIds([]); 
-    } catch (err) {
-      console.error("Error fetching recycled documents:", err);
-      setError("Failed to load recycle bin.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) setSelectedIds(processedDocuments.map(doc => doc.id));
-    else setSelectedIds([]);
-  };
-
-  const handleSelectOne = (id) => {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
-  };
-
   const handleRestore = async (id) => {
     try {
       await api.post(`/documents/${id}/restore`);
-      fetchRecycledDocuments();
+      fetchDocuments();
       window.dispatchEvent(new Event('documentUploaded')); 
     } catch (error) {
       console.error("Failed to restore:", error);
@@ -78,7 +51,7 @@ export default function RecycleBin() {
   const handleBulkRestore = async () => {
     try {
       await Promise.all(selectedIds.map(id => api.post(`/documents/${id}/restore`)));
-      fetchRecycledDocuments();
+      fetchDocuments();
       window.dispatchEvent(new Event('documentUploaded'));
     } catch (error) {
       console.error("Failed to bulk restore:", error);
@@ -90,7 +63,7 @@ export default function RecycleBin() {
     if (!isConfirmed) return;
     try {
       await api.delete(`/documents/${id}/permanent`);
-      fetchRecycledDocuments();
+      fetchDocuments();
     } catch (error) {
       console.error("Failed to permanently delete:", error);
     }
@@ -101,7 +74,7 @@ export default function RecycleBin() {
     if (!isConfirmed) return;
     try {
       await Promise.all(selectedIds.map(id => api.delete(`/documents/${id}/permanent`)));
-      fetchRecycledDocuments();
+      fetchDocuments();
     } catch (error) {
       console.error("Failed to bulk delete:", error);
     }
@@ -111,86 +84,6 @@ export default function RecycleBin() {
     if (!dateString) return 'Unknown Date';
     return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
-
-  const uniqueOptions = useMemo(() => {
-    return {
-      titles: [...new Set(documents.map(d => d.documentTitle || d.DocumentTitle).filter(Boolean))],
-      cases: [...new Set(documents.map(d => d.caseNumber || d.CaseNumber).filter(Boolean))],
-      counties: [...new Set(documents.map(d => d.county || d.County).filter(Boolean))],
-      statuses: [...new Set(documents.map(d => d.status || d.Status).filter(Boolean))]
-    };
-  }, [documents]);
-
-  const handleFilterChange = (key, value) => setActiveFilters(prev => ({ ...prev, [key]: value }));
-  const clearFilters = () => {
-    setActiveFilters({ documentTitle: '', caseNumber: '', county: '', status: '' });
-    setIsFilterMenuOpen(false);
-  };
-
-  const handleSort = (key) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  const processedDocuments = useMemo(() => {
-    let filtered = documents.filter(doc => {
-      const matchTitle = !activeFilters.documentTitle || (doc.documentTitle || doc.DocumentTitle) === activeFilters.documentTitle;
-      const matchCase = !activeFilters.caseNumber || (doc.caseNumber || doc.CaseNumber) === activeFilters.caseNumber;
-      const matchCounty = !activeFilters.county || (doc.county || doc.County) === activeFilters.county;
-      const matchStatus = !activeFilters.status || (doc.status || doc.Status) === activeFilters.status;
-      return matchTitle && matchCase && matchCounty && matchStatus;
-    });
-
-    return filtered.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortConfig.key) {
-        case 'fileName':
-          aValue = (a.fileName || a.FileName || '').toLowerCase();
-          bValue = (b.fileName || b.FileName || '').toLowerCase();
-          break;
-        case 'documentTitle':
-          aValue = (a.documentTitle || a.DocumentTitle || '').toLowerCase();
-          bValue = (b.documentTitle || b.DocumentTitle || '').toLowerCase();
-          break;
-        case 'caseNumber':
-          aValue = (a.caseNumber || a.CaseNumber || '').toLowerCase();
-          bValue = (b.caseNumber || b.CaseNumber || '').toLowerCase();
-          break;
-        case 'county':
-          aValue = (a.county || a.County || '').toLowerCase();
-          bValue = (b.county || b.County || '').toLowerCase();
-          break;
-        case 'status':
-          aValue = (a.status || a.Status || '').toLowerCase();
-          bValue = (b.status || b.Status || '').toLowerCase();
-          break;
-        case 'date':
-        default:
-          aValue = new Date(a.deletedAt || a.DeletedAt || a.createdAt || a.CreatedAt || 0).getTime();
-          bValue = new Date(b.deletedAt || b.DeletedAt || b.createdAt || b.CreatedAt || 0).getTime();
-          break;
-      }
-
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [documents, activeFilters, sortConfig]);
-
-  const SortableHeader = ({ label, sortKey, colSpan = 1 }) => (
-    <div 
-      className={`col-span-${colSpan} flex items-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors select-none`}
-      onClick={() => handleSort(sortKey)}
-    >
-      {label}
-      <span className="ml-1 text-[10px] text-gray-400">
-        {sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
-      </span>
-    </div>
-  );
 
   const activeFilterCount = Object.values(activeFilters).filter(val => val !== '').length;
 
@@ -232,35 +125,35 @@ export default function RecycleBin() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">AI Document Title</label>
-                <select value={activeFilters.documentTitle} onChange={(e) => handleFilterChange('documentTitle', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                <select value={activeFilters.documentTitle} onChange={(e) => setActiveFilters({...activeFilters, documentTitle: e.target.value})} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
                   <option value="">All Titles</option>
                   {uniqueOptions.titles.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Case Number</label>
-                <select value={activeFilters.caseNumber} onChange={(e) => handleFilterChange('caseNumber', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                <select value={activeFilters.caseNumber} onChange={(e) => setActiveFilters({...activeFilters, caseNumber: e.target.value})} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
                   <option value="">All Cases</option>
                   {uniqueOptions.cases.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">County</label>
-                <select value={activeFilters.county} onChange={(e) => handleFilterChange('county', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                <select value={activeFilters.county} onChange={(e) => setActiveFilters({...activeFilters, county: e.target.value})} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
                   <option value="">All Counties</option>
                   {uniqueOptions.counties.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
-                <select value={activeFilters.status} onChange={(e) => handleFilterChange('status', e.target.value)} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                <select value={activeFilters.status} onChange={(e) => setActiveFilters({...activeFilters, status: e.target.value})} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
                   <option value="">All Statuses</option>
                   {uniqueOptions.statuses.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex justify-end mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <button onClick={clearFilters} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition">Clear All Filters</button>
+              <button onClick={() => setActiveFilters({ documentTitle: '', caseNumber: '', county: '', status: '' })} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition">Clear All Filters</button>
             </div>
           </div>
         )}
@@ -276,15 +169,15 @@ export default function RecycleBin() {
                   type="checkbox" 
                   className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" 
                   checked={processedDocuments.length > 0 && selectedIds.length === processedDocuments.length} 
-                  onChange={handleSelectAll} 
+                  onChange={(e) => handleSelectAll(e, processedDocuments)} 
                 />
               </div>
-              <SortableHeader label="File Name" sortKey="fileName" colSpan={2} />
-              <SortableHeader label="AI Document Title" sortKey="documentTitle" colSpan={2} />
-              <SortableHeader label="Case Number" sortKey="caseNumber" colSpan={2} />
-              <SortableHeader label="County" sortKey="county" colSpan={1} />
-              <SortableHeader label="Status" sortKey="status" colSpan={1} />
-              <SortableHeader label="Date" sortKey="date" colSpan={1} />
+              <SortableHeader label="File Name" sortKey="fileName" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="AI Document Title" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Case Number" sortKey="caseNumber" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="County" sortKey="county" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Status" sortKey="status" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Date" sortKey="date" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
               <div className="col-span-2 text-right">Actions</div>
             </div>
 
@@ -298,7 +191,7 @@ export default function RecycleBin() {
                   <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {documents.length === 0 ? "Recycle bin is empty." : "No documents match your filter settings."}
+                  {originalDocuments.length === 0 ? "Recycle bin is empty." : "No documents match your filter settings."}
                 </p>
               </div>
             )}
@@ -330,7 +223,7 @@ export default function RecycleBin() {
                                 <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-blue-600 dark:text-blue-400">{documents.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-blue-600 dark:text-blue-400">{originalDocuments.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
                               </div>
                             </div>
                           )}

@@ -1,81 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthProvider';
+import { useUsers } from '../hooks/useUsers';
 import api from '../services/api';
+
+import SortableHeader from '../components/common/SortableHeader';
 
 export default function Users() {
   const { user } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [pageError, setPageError] = useState(''); // NEW: Inline error for the main page
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
-  
-  const [selectedIds, setSelectedIds] = useState([]);
+  // 1. originalUsers removed from destructuring
+  const {
+    users: processedUsers, isLoading, error, setError: setPageError, fetchUsers,
+    selectedIds, handleSelectAll, handleSelectOne, sortConfig, handleSort,
+    searchQuery, setSearchQuery, roleFilter, setRoleFilter
+  } = useUsers();
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [editError, setEditError] = useState(''); // NEW: Inline error for the modal
+  const [editError, setEditError] = useState(''); 
   const [editFormData, setEditFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '', businessName: '', accountType: '', newPassword: ''
   });
-
-  useEffect(() => {
-    if (user?.role === 'Admin') {
-      fetchUsers();
-    }
-  }, [user]);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setPageError('');
-      const response = await api.get('/users/all');
-      setUsers(response.data);
-      setSelectedIds([]); 
-    } catch (error) {
-      console.error("Failed to fetch users", error);
-      setPageError("Failed to load user data. Please refresh the page.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processedUsers = useMemo(() => {
-    let filtered = users.filter(u => {
-      const matchesSearch = 
-        `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.id.toString().includes(searchQuery);
-      
-      const matchesRole = roleFilter === 'All' || u.accountType === roleFilter;
-      return matchesSearch && matchesRole;
-    });
-
-    return filtered.sort((a, b) => {
-      let aValue, bValue;
-      switch (sortConfig.key) {
-        case 'id': aValue = a.id; bValue = b.id; break;
-        case 'name': aValue = `${a.firstName} ${a.lastName}`.toLowerCase(); bValue = `${b.firstName} ${b.lastName}`.toLowerCase(); break;
-        case 'accountType': aValue = a.accountType.toLowerCase(); bValue = b.accountType.toLowerCase(); break;
-        case 'date': default: aValue = new Date(a.createdAt || 0).getTime(); bValue = new Date(b.createdAt || 0).getTime(); break;
-      }
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [users, searchQuery, roleFilter, sortConfig]);
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) setSelectedIds(processedUsers.map(u => u.id));
-    else setSelectedIds([]);
-  };
-
-  const handleSelectOne = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
-
-  const handleSort = (key) => setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
 
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -130,18 +76,11 @@ export default function Users() {
 
       setIsEditModalOpen(false);
       fetchUsers();
-    } catch (error) {
-      console.error("Failed to update user", error);
-      setEditError(error.response?.data?.message || "Failed to save user updates.");
+    } catch (err) {
+      console.error("Failed to update user", err);
+      setEditError(err.response?.data?.message || "Failed to save user updates.");
     }
   };
-
-  const SortableHeader = ({ label, sortKey, colSpan = 1, align = 'left' }) => (
-    <div className={`col-span-${colSpan} flex items-center ${align === 'right' ? 'justify-end' : ''} cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors select-none`} onClick={() => handleSort(sortKey)}>
-      {label}
-      <span className="ml-1 text-[10px] text-gray-400">{sortConfig.key === sortKey ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</span>
-    </div>
-  );
 
   if (user?.role !== 'Admin') return <Navigate to="/dashboard" replace />;
 
@@ -172,9 +111,9 @@ export default function Users() {
         </div>
       </div>
 
-      {pageError && (
+      {error && (
         <div className="mb-4 p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
-          {pageError}
+          {error}
         </div>
       )}
 
@@ -207,17 +146,17 @@ export default function Users() {
             {/* TABLE HEADER */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <div className="col-span-1 flex items-center justify-center">
-                <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={processedUsers.length > 0 && selectedIds.length === processedUsers.length} onChange={handleSelectAll} />
+                <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={processedUsers.length > 0 && selectedIds.length === processedUsers.length} onChange={(e) => handleSelectAll(e, processedUsers)} />
               </div>
-              <SortableHeader label="ID" sortKey="id" colSpan={1} />
-              <SortableHeader label="User" sortKey="name" colSpan={4} />
-              <SortableHeader label="Account Type" sortKey="accountType" colSpan={3} />
-              <SortableHeader label="Date Joined" sortKey="date" colSpan={2} />
+              <SortableHeader label="ID" sortKey="id" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="User" sortKey="name" colSpan={4} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Account Type" sortKey="accountType" colSpan={3} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Date Joined" sortKey="date" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
               <div className="col-span-1 text-right">Actions</div>
             </div>
 
             {/* TABLE BODY */}
-            {loading ? (
+            {isLoading ? (
               <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
             ) : processedUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
