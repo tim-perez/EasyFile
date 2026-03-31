@@ -17,7 +17,8 @@ export default function Documents() {
   const {
     documents: processedDocuments, originalDocuments, isLoading, error, fetchDocuments,
     selectedIds, handleSelectAll, handleSelectOne, sortConfig, handleSort,
-    activeFilters, setActiveFilters, uniqueOptions
+    activeFilters, setActiveFilters, uniqueOptions,
+    setSearchQuery
   } = useDocuments();
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -29,6 +30,10 @@ export default function Documents() {
   const [activePopoverId, setActivePopoverId] = useState(null);
 
   const globalSearchQuery = searchParams.get('q') || '';
+
+  useEffect(() => {
+    setSearchQuery(globalSearchQuery);
+  }, [globalSearchQuery, setSearchQuery]);
 
   useEffect(() => {
     if (user?.role === 'Admin') {
@@ -256,7 +261,7 @@ export default function Documents() {
               {/* TABLE BODY */}
               <div className="divide-y divide-gray-200 dark:divide-gray-800">
                 {processedDocuments.map((doc) => (
-                  <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'}`}>                    
+                  <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'} ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : ''}`}>
                     
                     <div className="col-span-1 flex items-center justify-center">
                       <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
@@ -316,7 +321,7 @@ export default function Documents() {
                     </div>
 
                     <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-600 hover:text-blue-800 text-sm font-medium">View Report</button>
+                      <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View Report</button>
                       
                       {/* DELETE BUTTON */}
                       {user?.role !== 'Guest' && (
