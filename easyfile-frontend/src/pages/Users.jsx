@@ -146,7 +146,7 @@ export default function Users() {
   if (user?.role !== 'Admin') return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="max-w-7xl mx-auto w-full relative pb-12">
+    <div className="w-full relative pb-12">
       
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -202,7 +202,7 @@ export default function Users() {
       {/* THE GRID TABLE */}
       <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="min-w-275">
+          <div className="w-full min-w-250">
             
             {/* TABLE HEADER */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">

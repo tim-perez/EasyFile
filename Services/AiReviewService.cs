@@ -41,7 +41,7 @@ namespace EasyFile.Services
 
             var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, "[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)");
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
             request.Headers.Add("Authorization", $"Bearer {_apiKey}");
             request.Content = jsonContent;
 
