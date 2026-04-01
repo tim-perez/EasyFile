@@ -1,8 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 
 export function useUsers() {
+  // Pagination State
   const [users, setUsers] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [pageNumber, setPageNumber] = useState(1);
+  const pageSize = 20;
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -11,12 +17,29 @@ export function useUsers() {
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [selectedIds, setSelectedIds] = useState([]);
 
+  const isFirstRender = useRef(true);
+
   const fetchUsers = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
-      const response = await api.get('/users/all');
-      setUsers(response.data);
+      
+      const params = new URLSearchParams({
+        pageNumber,
+        pageSize,
+        sortColumn: sortConfig.key,
+        sortDirection: sortConfig.direction,
+      });
+
+      if (searchQuery) params.append('SearchTerm', searchQuery);
+      if (roleFilter !== 'All') params.append('RoleFilter', roleFilter);
+
+      const response = await api.get(`/users/all?${params.toString()}`);
+      
+      // Handle the PagedResult wrapper
+      setUsers(response.data.items || response.data);
+      setTotalCount(response.data.totalCount || 0);
+      setTotalPages(response.data.totalPages || 1);
       setSelectedIds([]); 
     } catch (err) {
       console.error("Failed to fetch users", err);
@@ -24,7 +47,16 @@ export function useUsers() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pageNumber, pageSize, sortConfig, searchQuery, roleFilter]);
+
+  // Reset to page 1 if the user searches or changes the role filter
+  useEffect(() => {
+    if (isFirstRender.current) {
+        isFirstRender.current = false;
+        return;
+    }
+    setPageNumber(1);
+  }, [searchQuery, roleFilter, sortConfig]);
 
   useEffect(() => {
     fetchUsers();
@@ -43,34 +75,13 @@ export function useUsers() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]);
   };
 
-  const processedUsers = useMemo(() => {
-    let filtered = users.filter(u => {
-      const matchesSearch = 
-        `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.id.toString().includes(searchQuery);
-      
-      const matchesRole = roleFilter === 'All' || u.accountType === roleFilter;
-      return matchesSearch && matchesRole;
-    });
-
-    return filtered.sort((a, b) => {
-      let aValue, bValue;
-      switch (sortConfig.key) {
-        case 'id': aValue = a.id; bValue = b.id; break;
-        case 'name': aValue = `${a.firstName} ${a.lastName}`.toLowerCase(); bValue = `${b.firstName} ${b.lastName}`.toLowerCase(); break;
-        case 'accountType': aValue = a.accountType.toLowerCase(); bValue = b.accountType.toLowerCase(); break;
-        case 'date': default: aValue = new Date(a.createdAt || 0).getTime(); bValue = new Date(b.createdAt || 0).getTime(); break;
-      }
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [users, searchQuery, roleFilter, sortConfig]);
-
   return {
-    users: processedUsers,
+    users, 
     originalUsers: users,
+    totalCount,
+    totalPages,
+    pageNumber,
+    setPageNumber,
     isLoading,
     error,
     setError,

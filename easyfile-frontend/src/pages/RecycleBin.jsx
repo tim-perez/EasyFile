@@ -24,9 +24,10 @@ export default function RecycleBin() {
 
   useEffect(() => {
     if (user?.role === 'Admin') {
-      api.get('/users/all').then(res => {
+      api.get('/users/all?pageNumber=1&pageSize=1000').then(res => {
         const dictionary = {};
-        res.data.forEach(u => dictionary[u.id] = u);
+        const usersList = res.data.items || res.data;
+        usersList.forEach(u => dictionary[u.id] = u);
         setUserDictionary(dictionary);
       }).catch(err => console.error("Failed to load user dictionary", err));
     }
@@ -205,7 +206,7 @@ export default function RecycleBin() {
                       <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
                     </div>
 
-                    <div className="col-span-2 flex items-center gap-3 pr-4 opacity-60">
+                    <div className="col-span-2 flex items-center gap-3 pr-4">
                       {user?.role === 'Admin' && (
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button 
@@ -230,7 +231,8 @@ export default function RecycleBin() {
                         </div>
                       )}
 
-                      <div className="flex flex-col overflow-hidden w-full">
+                      {/* ADDED opacity-60 specifically to the text wrapper! */}
+                      <div className="flex flex-col overflow-hidden w-full opacity-60">
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate w-full block" title={doc.fileName || doc.FileName}>
                           {doc.fileName || doc.FileName || 'Unknown File'}
                         </span>

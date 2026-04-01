@@ -14,8 +14,10 @@ export default function ActionWidget() {
   const fetchRecentDocuments = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get('/documents');
-      setRecentDocuments(response.data.slice(0, 5));
+      // MAGIC: Ask the backend to do the slicing for us!
+      const response = await api.get('/documents?pageNumber=1&pageSize=5');
+      // Look inside response.data.items for the array
+      setRecentDocuments(response.data.items || []);
     } catch (error) {
       console.error("Failed to fetch recent documents:", error);
     } finally {
@@ -25,8 +27,6 @@ export default function ActionWidget() {
 
   useEffect(() => {
     fetchRecentDocuments();
-    
-    // NEW: Listen for the global event we set up in the Upload Modal!
     window.addEventListener('documentUploaded', fetchRecentDocuments);
     return () => window.removeEventListener('documentUploaded', fetchRecentDocuments);
   }, []);
@@ -114,17 +114,8 @@ export default function ActionWidget() {
         </div>
       )}
 
-      <UploadDocumentModal
-        isOpen={isUploadModalOpen} 
-        onClose={() => setIsUploadModalOpen(false)} 
-      />
-
-      <DocumentReportModal 
-        isOpen={isReportModalOpen} 
-        onClose={() => setIsReportModalOpen(false)} 
-        document={selectedReportDoc} 
-      />
-
+      <UploadDocumentModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
+      <DocumentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} document={selectedReportDoc} />
     </div>
   );
 }

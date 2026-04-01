@@ -17,32 +17,22 @@ export default function AnalyticsWidget() {
       try {
         setIsLoading(true);
         
-        const docsRes = await api.get('/documents');
-        const docs = docsRes.data;
+        // Fetch native stats from our new backend endpoint!
+        const analyticsRes = await api.get('/documents/analytics');
+        setStats({
+          total: analyticsRes.data.total,
+          processed: analyticsRes.data.processed,
+          incomplete: analyticsRes.data.incomplete
+        });
+        setTopCounties(analyticsRes.data.topCounties);
 
-        const processedCount = docs.filter(d => d.status === 'Processed' || d.Status === 'Processed').length;
-        const incompleteCount = docs.filter(d => ['Incomplete', 'Pending'].includes(d.status || d.Status)).length;
-
-        setStats({ total: docs.length, processed: processedCount, incomplete: incompleteCount });
-
-        const countyCounts = docs.reduce((acc, doc) => {
-          const county = doc.county || doc.County || 'Unknown';
-          if (county !== 'Unknown') acc[county] = (acc[county] || 0) + 1;
-          return acc;
-        }, {});
-
-        const sorted = Object.entries(countyCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([name, count]) => ({ name, count }));
-        setTopCounties(sorted);
-
+        // Fetch user stats (safely checking if it's an array or paginated)
         if (user?.role === 'Admin') {
           const usersRes = await api.get('/users/all');
-          const users = usersRes.data;
+          const usersList = usersRes.data.items || usersRes.data; 
           setAdminStats({
-            totalUsers: users.length,
-            activeGuests: users.filter(u => u.accountType === 'Guest').length
+            totalUsers: usersList.length,
+            activeGuests: usersList.filter(u => u.accountType === 'Guest').length
           });
         }
 

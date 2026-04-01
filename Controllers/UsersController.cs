@@ -10,6 +10,7 @@ using EasyFile.Models.DTOs;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using EasyFile.Models.Pagination;
 
 namespace EasyFile.Controllers
 {
@@ -91,18 +92,64 @@ namespace EasyFile.Controllers
 
         [HttpGet("all")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers([FromQuery] UserQueryParameters queryParams)
         {
             try
             {
-                var users = await _dbContext.Users
+                var query = _dbContext.Users.AsQueryable();
+
+                // 1. Apply Role Filter
+                if (!string.IsNullOrWhiteSpace(queryParams.RoleFilter) && queryParams.RoleFilter != "All")
+                {
+                    query = query.Where(u => u.AccountType == queryParams.RoleFilter);
+                }
+
+                // 2. Apply Search Filter
+                if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
+                {
+                    var search = queryParams.SearchTerm.ToLower();
+                    bool isNumeric = int.TryParse(search, out int searchId);
+
+                    query = query.Where(u => 
+                        (isNumeric && u.Id == searchId) ||
+                        (u.FirstName != null && u.FirstName.ToLower().Contains(search)) ||
+                        (u.LastName != null && u.LastName.ToLower().Contains(search)) ||
+                        (u.Email != null && u.Email.ToLower().Contains(search))
+                    );
+                }
+
+                // 3. Count total records BEFORE paginating
+                var totalCount = await query.CountAsync();
+
+                // 4. Apply Server-Side Sorting
+                bool isDesc = queryParams.SortDirection?.ToLower() == "desc";
+                query = queryParams.SortColumn?.ToLower() switch
+                {
+                    "id" => isDesc ? query.OrderByDescending(u => u.Id) : query.OrderBy(u => u.Id),
+                    "name" => isDesc ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName) : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
+                    "accounttype" => isDesc ? query.OrderByDescending(u => u.AccountType) : query.OrderBy(u => u.AccountType),
+                    _ => isDesc ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt)
+                };
+
+                // 5. Apply Pagination and Select only needed fields
+                var users = await query
+                    .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+                    .Take(queryParams.PageSize)
                     .Select(u => new { 
                         u.Id, u.FirstName, u.LastName, u.Email, u.AccountType, u.BusinessName, u.Phone, u.CreatedAt
                     })
-                    .OrderByDescending(u => u.CreatedAt)
                     .ToListAsync();
-                    
-                return Ok(users);
+
+                // 6. Return the standard wrapper
+                var result = new PagedResult<object>
+                {
+                    Items = users.Cast<object>().ToList(),
+                    TotalCount = totalCount,
+                    PageNumber = queryParams.PageNumber,
+                    PageSize = queryParams.PageSize
+                };
+
+                return Ok(result);
             }
             catch (Exception ex)
             {

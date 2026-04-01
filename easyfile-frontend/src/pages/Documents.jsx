@@ -15,10 +15,9 @@ export default function Documents() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const {
-    documents: processedDocuments, originalDocuments, isLoading, error, fetchDocuments,
-    selectedIds, handleSelectAll, handleSelectOne, sortConfig, handleSort,
-    activeFilters, setActiveFilters, uniqueOptions,
-    setSearchQuery
+    documents, originalDocuments, totalCount, totalPages, pageNumber, setPageNumber, // <--- NEW EXTRACTS
+    isLoading, error, fetchDocuments, selectedIds, handleSelectAll, handleSelectOne, 
+    sortConfig, handleSort, activeFilters, setActiveFilters, uniqueOptions, setSearchQuery
   } = useDocuments();
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -37,15 +36,17 @@ export default function Documents() {
 
   useEffect(() => {
     if (user?.role === 'Admin') {
-      api.get('/users/all').then(res => {
+      // 1. Ask for enough users to build a complete dictionary
+      api.get('/users/all?pageNumber=1&pageSize=1000').then(res => {
         const dictionary = {};
-        res.data.forEach(u => dictionary[u.id] = u);
+        // 2. Safely extract from the new pagination wrapper!
+        const usersList = res.data.items || res.data;
+        usersList.forEach(u => dictionary[u.id] = u);
         setUserDictionary(dictionary);
       }).catch(err => console.error("Failed to load user dictionary", err));
     }
   }, [user]);
 
-  // Safely close the admin popover when clicking outside of it
   useEffect(() => {
     const handleClickOutside = () => setActivePopoverId(null);
     document.addEventListener('click', handleClickOutside);
@@ -129,7 +130,6 @@ export default function Documents() {
     <div className="w-full relative pb-12">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Documents</h1>
 
-      {/* ERROR DISPLAY */}
       {error && (
         <div className="mb-4 p-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
           {error}
@@ -178,7 +178,6 @@ export default function Documents() {
           </div>
         )}
 
-        {/* DROPDOWN PANEL */}
         {isFilterMenuOpen && (
           <div className="absolute top-full left-0 mt-2 w-full max-w-4xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-4 z-50">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -220,17 +219,13 @@ export default function Documents() {
 
       {isLoading ? (
         <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-      ) : processedDocuments.length === 0 ? (
-        
-        /* EMPTY STATE - Utilizing onOpenUploadModal */
+      ) : documents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-6 text-center border border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-[#1a1a1a]">
           <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 shadow-sm">
               <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           </div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No documents found</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm max-w-sm">
-            {originalDocuments.length === 0 ? "Your legal document vault is currently empty." : "No documents match your current filter settings."}
-          </p>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm max-w-sm">No documents match your current filter settings.</p>
           {originalDocuments.length === 0 && (
             <button onClick={onOpenUploadModal} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm uppercase tracking-wider flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -238,16 +233,15 @@ export default function Documents() {
             </button>
           )}
         </div>
-
       ) : (
-        <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="overflow-x-auto">
-            <div className="w-full min-w-250">
+            <div className="w-full min-w-300">
               
               {/* TABLE HEADER */}
               <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <div className="col-span-1 flex items-center justify-center">
-                  <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={processedDocuments.length > 0 && selectedIds.length === processedDocuments.length} onChange={(e) => handleSelectAll(e, processedDocuments)} />
+                  <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={documents.length > 0 && selectedIds.length === documents.length} onChange={(e) => handleSelectAll(e, documents)} />
                 </div>
                 <SortableHeader label="File Name" sortKey="fileName" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="AI Document Title" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
@@ -260,16 +254,13 @@ export default function Documents() {
 
               {/* TABLE BODY */}
               <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                {processedDocuments.map((doc) => (
+                {documents.map((doc) => (
                   <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'} ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : ''}`}>
                     
                     <div className="col-span-1 flex items-center justify-center">
-                      <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
+                      <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />                    
                     </div>
-
                     <div className="col-span-2 flex items-center gap-3 pr-4">
-                      
-                      {/* ADMIN POPOVER - Utilizing userDictionary and activePopoverId */}
                       {user?.role === 'Admin' && (
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button 
@@ -279,7 +270,6 @@ export default function Documents() {
                           >
                             {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
                           </button>
-
                           {activePopoverId === doc.id && (
                             <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
                               <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
@@ -318,12 +308,11 @@ export default function Documents() {
 
                     <div className="col-span-1 flex flex-col">
                       <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate)}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
                     </div>
 
                     <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View Report</button>
-                      
-                      {/* DELETE BUTTON */}
                       {user?.role !== 'Guest' && (
                         <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -334,9 +323,37 @@ export default function Documents() {
                   </div>
                 ))}
               </div>
-              
             </div>
           </div>
+          
+          {/* NEW: SERVER-SIDE PAGINATION FOOTER */}
+          {totalPages > 1 && (
+            <div className="flex flex-wrap items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1a1a1a]">
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 sm:mb-0">
+                Showing <span className="font-medium text-gray-900 dark:text-white">{((pageNumber - 1) * 20) + 1}</span> to <span className="font-medium text-gray-900 dark:text-white">{Math.min(pageNumber * 20, totalCount)}</span> of <span className="font-medium text-gray-900 dark:text-white">{totalCount}</span> results
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPageNumber(prev => Math.max(prev - 1, 1))}
+                  disabled={pageNumber === 1}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                <div className="flex items-center px-4 font-medium text-sm text-gray-700 dark:text-gray-300">
+                  Page {pageNumber} of {totalPages}
+                </div>
+                <button
+                  onClick={() => setPageNumber(prev => Math.min(prev + 1, totalPages))}
+                  disabled={pageNumber === totalPages}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 

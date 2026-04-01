@@ -414,5 +414,40 @@ namespace EasyFile.Controllers
                 return StatusCode(500, new { message = "Failed to zip original files." });
             }
         }
+
+        [HttpGet("analytics")]
+        public async Task<IActionResult> GetAnalytics()
+        {
+            try
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
+
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var query = _dbContext.Documents.Where(d => d.Recycled == false);
+
+                if (userRole != "Admin") query = query.Where(d => d.UploaderId == userId);
+
+                // Execute the math directly in SQL Server!
+                var total = await query.CountAsync();
+                var processed = await query.CountAsync(d => d.Status == "Processed");
+                var incomplete = await query.CountAsync(d => d.Status == "Incomplete" || d.Status == "Pending");
+
+                var topCounties = await query
+                    .Where(d => d.County != "Unknown" && !string.IsNullOrEmpty(d.County))
+                    .GroupBy(d => d.County)
+                    .Select(g => new { name = g.Key, count = g.Count() })
+                    .OrderByDescending(x => x.count)
+                    .Take(3)
+                    .ToListAsync();
+
+                return Ok(new { total, processed, incomplete, topCounties });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch document analytics.");
+                return StatusCode(500, new { message = "Failed to fetch analytics." });
+            }
+        }
     }
 }
