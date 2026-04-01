@@ -32,6 +32,7 @@
     <Folder Include="Data/" />
     <Folder Include="easyfile-frontend/src/components/" />
     <Folder Include="easyfile-frontend/src/context/" />
+    <Folder Include="EasyFile.Tests/Controllers/" />
     <Folder Include="Interfaces/" />
     <Folder Include="Mappings/" />
     <Folder Include="Middlewares/" />
@@ -39,6 +40,12 @@
     <Folder Include="Repositories/" />
     <Folder Include="Services/" />
     <Folder Include="Validators/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="EasyFile.Tests\**" />
+    <Content Remove="EasyFile.Tests\**" />
+    <None Remove="EasyFile.Tests\**" />
   </ItemGroup>
 
 </Project>
