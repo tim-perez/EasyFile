@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include=".github/" />
     <Folder Include="Constants/" />
     <Folder Include="Controllers/" />
     <Folder Include="Data/" />

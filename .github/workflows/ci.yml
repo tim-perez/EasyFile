@@ -1,0 +1,63 @@
+name: EasyFile Enterprise CI
+
+# 1. WHEN SHOULD THE ROBOT RUN?
+# We tell it to run every time code is pushed to the 'main' branch, 
+# or when a Pull Request is opened against 'main'.
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# 2. WHAT SHOULD THE ROBOT DO?
+jobs:
+  # --- JOB 1: Test the C# Backend ---
+  build-and-test-backend:
+    name: Build & Test .NET API
+    runs-on: ubuntu-latest # Boot up a fresh Linux cloud server
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4 # Download your code from GitHub into the server
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x' # Install the exact .NET SDK you are using
+
+    - name: Restore Dependencies
+      run: dotnet restore EasyFile.slnx
+
+    - name: Build the API
+      run: dotnet build EasyFile.slnx --no-restore --configuration Release
+
+    - name: Run xUnit & Moq Tests
+      # If any of your 4 tests fail, this step crashes, and the pipeline stops!
+      run: dotnet test EasyFile.slnx --no-build --configuration Release --verbosity normal
+
+
+  # --- JOB 2: Build the React Frontend ---
+  build-frontend:
+    name: Build React App
+    runs-on: ubuntu-latest # Boot up a SECOND cloud server to run concurrently!
+
+    # Tell this specific server to only look inside the React folder
+    defaults:
+      run:
+        working-directory: ./easyfile-frontend
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x' # Standard LTS Node version
+
+    - name: Install NPM Packages
+      run: npm ci # 'ci' is cleaner and faster than 'install' for cloud servers
+
+    - name: Compile React Build
+      # This ensures your React code has no syntax errors and compiles cleanly
+      run: npm run build
