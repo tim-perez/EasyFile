@@ -11,6 +11,7 @@ using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models.DTOs;
 using EasyFile.Models.Pagination;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EasyFile.Controllers
 {
@@ -46,6 +47,7 @@ namespace EasyFile.Controllers
         }
 
         [HttpPost("upload")]
+        [EnableRateLimiting("UploadPolicy")]
         public async Task<IActionResult> UploadDocument(IFormFile file, [FromForm] string userId)
         {
             try

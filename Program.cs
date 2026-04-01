@@ -1,10 +1,12 @@
 using System;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Amazon.S3;
 using Amazon.Textract;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -83,6 +85,35 @@ builder.Services.AddCors(options =>
 });
 
 // ==========================================
+// RATE LIMITING SECURITY
+// ==========================================
+builder.Services.AddRateLimiter(options =>
+{
+    // If a user hits the limit, return a 429 (Too Many Requests) status code
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // 1. Standard Policy (For normal API browsing)
+    // Allows 100 requests per minute per IP address
+    options.AddFixedWindowLimiter("StandardPolicy", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 100;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0; // Don't queue excess requests, just reject them
+    });
+
+    // 2. Strict Upload Policy (Protects your AWS Bill)
+    // Allows only 5 document uploads per minute to prevent spam
+    options.AddFixedWindowLimiter("UploadPolicy", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 5;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+});
+
+// ==========================================
 // 6. AWS SERVICES
 // ==========================================
 var awsOptions = builder.Configuration.GetAWSOptions("AWS");
@@ -133,6 +164,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

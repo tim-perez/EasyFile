@@ -8,11 +8,13 @@ using AutoMapper;
 using EasyFile.Data;
 using EasyFile.Models;
 using EasyFile.Models.DTOs;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EasyFile.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableRateLimiting("StandardPolicy")]
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
