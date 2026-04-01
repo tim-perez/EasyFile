@@ -1,0 +1,41 @@
+services:
+  # 1. THE DATABASE (Official SQL Server 2022)
+  easyfile-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: easyfile-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Timessis2020$ 
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql 
+
+  # 2. THE C# BACKEND
+  easyfile-api:
+    build: 
+      context: . 
+      dockerfile: Dockerfile
+    container_name: easyfile-api
+    depends_on:
+      - easyfile-db 
+    ports:
+      - "5001:8080" # Bypassing the Mac Port 5000 AirPlay block
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=easyfile-db;Database=EasyFileDB;User Id=sa;Password=Timessis2020$;TrustServerCertificate=True;
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  # 3. THE REACT FRONTEND
+  easyfile-web:
+    build:
+      context: ./easyfile-frontend
+      dockerfile: Dockerfile
+    container_name: easyfile-web
+    depends_on:
+      - easyfile-api
+    ports:
+      - "3000:80" 
+
+volumes:
+  sql-data: # A clean, persistent volume managed by Docker
