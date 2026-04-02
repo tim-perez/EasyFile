@@ -6,7 +6,7 @@ services:
     container_name: easyfile-sql
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Timessis2020$ 
+      - SA_PASSWORD=${SQL_SA_PASSWORD} 
     ports:
       - "1433:1433"
     volumes:
@@ -21,10 +21,17 @@ services:
     depends_on:
       - easyfile-db 
     ports:
-      - "5001:8080" # Bypassing the Mac Port 5000 AirPlay block
+      - "5001:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Server=easyfile-db;Database=EasyFileDB;User Id=sa;Password=Timessis2020$;TrustServerCertificate=True;
+      # Use double underscores (__) to target the exact JSON fields!
+      - ConnectionStrings__DefaultConnection=Server=easyfile-db;Database=EasyFileDB;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;
+      - AWS__AccessKey=${AWS_ACCESS_KEY}
+      - AWS__SecretKey=${AWS_SECRET_KEY}
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      - OpenAI__ApiKey=${OPENAI_API_KEY}
       - ASPNETCORE_ENVIRONMENT=Development
+    volumes:
+      - ./EasyFile/Logs:/app/Logs
 
   # 3. THE REACT FRONTEND
   easyfile-web:
@@ -38,4 +45,4 @@ services:
       - "3000:80" 
 
 volumes:
-  sql-data: # A clean, persistent volume managed by Docker
+  sql-data:
