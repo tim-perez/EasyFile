@@ -87,16 +87,19 @@ try
     builder.Services.AddAuthorization();
 
     // ==========================================
-    // 5. CORS POLICY
+    // 5. CORS POLICY (DYNAMIC)
     // ==========================================
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+                        ?? Array.Empty<string>();
+
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy("AllowReactApp", policy =>
+        options.AddPolicy("StrictCorsPolicy", policy =>
         {
-            policy.WithOrigins("http://localhost:3000")
+            policy.WithOrigins(allowedOrigins) // <--- Injects the URLs dynamically
                 .AllowAnyHeader()
                 .AllowAnyMethod()
-                .AllowCredentials();
+                .AllowCredentials(); // Required if you ever implement Refresh Token cookies!
         });
     });
 
@@ -178,7 +181,7 @@ try
     }
 
     app.UseHttpsRedirection();
-    app.UseCors("AllowReactApp");
+    app.UseCors("StrictCorsPolicy");
 
     app.UseRateLimiter();
     app.UseAuthentication();
