@@ -191,7 +191,7 @@ try
 
     app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex.GetType().Name != "HostAbortedException")
 {
     Log.Fatal(ex, "EasyFile Application terminated unexpectedly during startup.");
 }

@@ -215,3 +215,12 @@
 /Users/timperez/Documents/GitHub/EasyFile/obj/Debug/net10.0/EasyFile.pdb
 /Users/timperez/Documents/GitHub/EasyFile/obj/Debug/net10.0/EasyFile.genruntimeconfig.cache
 /Users/timperez/Documents/GitHub/EasyFile/obj/Debug/net10.0/ref/EasyFile.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.AspNetCore.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Extensions.Hosting.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Extensions.Logging.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Formatting.Compact.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Settings.Configuration.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Sinks.Console.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Sinks.Debug.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Sinks.File.dll
