@@ -90,7 +90,7 @@ export default function EditDocumentModal({ isOpen, onClose, selectedDocs, onSuc
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
-          {/* NEW: Inline Error Display */}
+          {/* Inline Error Display */}
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
               {error}

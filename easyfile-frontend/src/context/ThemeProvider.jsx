@@ -35,7 +35,7 @@ export const ThemeProvider = ({ children }) => {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
-    // 4. Expose a toggle function so you can build a ☀️/🌙 button later!
+    // 4. Expose a toggle function for manual switching
     const toggleTheme = () => {
         setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
     };

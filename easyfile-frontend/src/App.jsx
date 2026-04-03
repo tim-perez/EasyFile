@@ -41,7 +41,7 @@ function App() {
                             <Route path="recycle-bin" element={<RecycleBin />} />
                             <Route path="account" element={<Account />} />
                             
-                            {/* 🛑 ADMIN-ONLY ROUTES */}
+                            {/* ADMIN-ONLY ROUTES */}
                             {/* Only users with the "Admin" role can get past this secondary checkpoint */}
                             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
                                 <Route path="users" element={<Users />} />

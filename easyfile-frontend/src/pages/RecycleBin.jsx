@@ -231,7 +231,6 @@ export default function RecycleBin() {
                         </div>
                       )}
 
-                      {/* ADDED opacity-60 specifically to the text wrapper! */}
                       <div className="flex flex-col overflow-hidden w-full opacity-60">
                         <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate w-full block" title={doc.fileName || doc.FileName}>
                           {doc.fileName || doc.FileName || 'Unknown File'}

@@ -27,12 +27,11 @@ yarn-error.log
 # ==========================================
 # EASYFILE SPECIFIC EXCLUSIONS
 # ==========================================
-# Ignore the Serilog text files so they don't bloat your repo!
+# Ignore the Serilog text files so they don't bloat the repo!
 Logs/
 **/Logs/
 
-# IGNORE SECRETS (Very Important for Production!)
+# IGNORE SECRETS
 .env
 .env.*
 appsettings.Development.json
-# Note: Keep appsettings.json, but DO NOT put real AWS keys or passwords in it!

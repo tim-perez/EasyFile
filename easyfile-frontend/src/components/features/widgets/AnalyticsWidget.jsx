@@ -17,7 +17,7 @@ export default function AnalyticsWidget() {
       try {
         setIsLoading(true);
         
-        // Fetch native stats from our new backend endpoint!
+        // Fetch native stats from the new backend endpoint
         const analyticsRes = await api.get('/documents/analytics');
         setStats({
           total: analyticsRes.data.total,

@@ -3,7 +3,7 @@ import api, { STORAGE_KEYS } from '../services/api';
 
 const AuthContext = createContext(null);
 
-// Centralize the local UI keys so we never misspell them
+// Centralize the local UI keys 
 const UI_STORAGE_KEYS = {
     USER_DATA: 'easyfile_user', // Bundles id, names, email, isGuest
 };
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
             
             localStorage.setItem(STORAGE_KEYS.TOKEN, token);
             localStorage.setItem(STORAGE_KEYS.ROLE, role);
-            localStorage.setItem(STORAGE_KEYS.GUEST_EMAIL, email); // The persistent magic!
+            localStorage.setItem(STORAGE_KEYS.GUEST_EMAIL, email); 
             
             const userData = { id, firstName, lastName, email, isGuest: true };
             localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
@@ -92,7 +92,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem(STORAGE_KEYS.TOKEN);
         localStorage.removeItem(STORAGE_KEYS.ROLE);
         localStorage.removeItem(UI_STORAGE_KEYS.USER_DATA);
-        // We purposely leave STORAGE_KEYS.GUEST_EMAIL alone here!
         
         setUser(null);
     };

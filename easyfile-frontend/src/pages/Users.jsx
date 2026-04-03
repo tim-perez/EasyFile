@@ -12,7 +12,7 @@ export default function Users() {
   // 1. originalUsers removed from destructuring
   const {
     users: processedUsers, isLoading, error, setError: setPageError, fetchUsers,
-    totalCount, totalPages, pageNumber, setPageNumber, // <--- NEW EXTRACTS
+    totalCount, totalPages, pageNumber, setPageNumber, 
     selectedIds, handleSelectAll, handleSelectOne, sortConfig, handleSort,
     searchQuery, setSearchQuery, roleFilter, setRoleFilter
   } = useUsers();

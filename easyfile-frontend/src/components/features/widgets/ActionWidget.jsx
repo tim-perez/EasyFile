@@ -14,9 +14,7 @@ export default function ActionWidget() {
   const fetchRecentDocuments = async () => {
     try {
       setIsLoading(true);
-      // MAGIC: Ask the backend to do the slicing for us!
       const response = await api.get('/documents?pageNumber=1&pageSize=5');
-      // Look inside response.data.items for the array
       setRecentDocuments(response.data.items || []);
     } catch (error) {
       console.error("Failed to fetch recent documents:", error);

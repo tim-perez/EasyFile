@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using EasyFile.Constants; // 🛑 ADDED THIS
+using EasyFile.Constants;
 using EasyFile.Interfaces;
 
 namespace EasyFile.Services
@@ -33,7 +33,6 @@ namespace EasyFile.Services
                 temperature = 0.1, 
                 messages = new[]
                 {
-                    // 🛑 CHANGED: Pulling the prompt cleanly from our Constants file!
                     new { role = "system", content = AiPrompts.SystemPrompt }, 
                     new { role = "user", content = $"Here is the extracted document text:\n\n{extractedText}" }
                 }

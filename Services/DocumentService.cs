@@ -28,7 +28,6 @@ namespace EasyFile.Services
         {
             var fileKey = $"uploads/{userId}/{Guid.NewGuid()}_{file.FileName}";
 
-            // Optimization: Stream directly to S3 instead of loading the whole file into server RAM
             using var stream = file.OpenReadStream();
 
             var uploadRequest = new PutObjectRequest

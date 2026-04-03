@@ -23,7 +23,6 @@ services:
     ports:
       - "5001:8080"
     environment:
-      # Use double underscores (__) to target the exact JSON fields!
       - ConnectionStrings__DefaultConnection=Server=easyfile-db;Database=EasyFileDB;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;
       - AWS__AccessKey=${AWS_ACCESS_KEY}
       - AWS__SecretKey=${AWS_SECRET_KEY}

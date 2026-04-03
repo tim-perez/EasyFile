@@ -17,7 +17,7 @@ export function useDocuments(endpoint = '/documents') {
   const [activeFilters, setActiveFilters] = useState({ documentTitle: '', caseNumber: '', county: '', status: '' });
   const [searchQuery, setSearchQuery] = useState('');
 
-  // We use a ref to track if it's the first render to prevent double-fetching
+  // Use a ref to track if it's the first render to prevent double-fetching
   const isFirstRender = useRef(true);
 
   // 2. Fetch directly from the backend using URL Query Parameters
@@ -40,7 +40,7 @@ export function useDocuments(endpoint = '/documents') {
 
       const response = await api.get(`${endpoint}?${params.toString()}`); 
       
-      // We safely handle the new PagedResult wrapper the backend is sending
+      // Safely handle the new PagedResult wrapper the backend is sending
       setDocuments(response.data.items || response.data);
       setTotalCount(response.data.totalCount || 0);
       setTotalPages(response.data.totalPages || 1);
@@ -70,7 +70,6 @@ export function useDocuments(endpoint = '/documents') {
   }, [fetchDocuments]);
 
   // Note: In server-side pagination, these will only show options from the current page.
-  // In a Phase 3 enterprise app, this would be its own '/documents/filters' endpoint!
   const uniqueOptions = useMemo(() => ({
     titles: [...new Set(documents.map(d => d.documentTitle || d.DocumentTitle).filter(Boolean))],
     cases: [...new Set(documents.map(d => d.caseNumber || d.CaseNumber).filter(Boolean))],
@@ -92,7 +91,7 @@ export function useDocuments(endpoint = '/documents') {
   };
 
   return {
-    documents, // We no longer need processedDocuments!
+    documents, 
     originalDocuments: documents, 
     totalCount,
     totalPages,

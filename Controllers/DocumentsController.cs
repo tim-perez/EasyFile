@@ -82,7 +82,6 @@ namespace EasyFile.Controllers
 
                 var aiReportJson = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
                 
-                // MAGIC: Safely deserialize the raw JSON into our strongly typed DTO
                 var aiReportDto = JsonSerializer.Deserialize<AiDocumentReportDto>(aiReportJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
                                   ?? new AiDocumentReportDto();
 
@@ -92,7 +91,6 @@ namespace EasyFile.Controllers
                     return BadRequest(new { message = "Upload Failed: The uploaded file is not recognized as a legal document." });
                 }
 
-                // MAGIC: AutoMapper perfectly maps the DTO into the Database Entity!
                 var newDocument = _mapper.Map<EasyFile.Models.Document>(aiReportDto);
                 newDocument.UploaderId = parsedUserId;
                 newDocument.FileName = originalFileName ?? "Unknown_File.pdf";
@@ -323,7 +321,6 @@ namespace EasyFile.Controllers
 
                 foreach (var doc in documents)
                 {
-                    // MAGIC: AutoMapper applies the edits, ignoring any null/empty strings automatically!
                     _mapper.Map(request, doc);
                 }
 
@@ -430,7 +427,6 @@ namespace EasyFile.Controllers
 
                 if (userRole != "Admin") query = query.Where(d => d.UploaderId == userId);
 
-                // Execute the math directly in SQL Server!
                 var total = await query.CountAsync();
                 var processed = await query.CountAsync(d => d.Status == "Processed");
                 var incomplete = await query.CountAsync(d => d.Status == "Incomplete" || d.Status == "Pending");
