@@ -36,7 +36,7 @@ export default function InformationWidgets() {
         <div className="flex flex-col gap-1">
           
           <a 
-            href="https://yourportfolio.com" 
+            href="https://tim-perez.github.io/" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#232323] group transition-colors border border-transparent hover:border-gray-100 dark:hover:border-gray-800"
@@ -49,7 +49,7 @@ export default function InformationWidgets() {
           </a>
 
           <a 
-            href="https://linkedin.com/in/yourprofile" 
+            href="https://www.linkedin.com/in/tim-perez-/" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#232323] group transition-colors border border-transparent hover:border-gray-100 dark:hover:border-gray-800"
@@ -62,7 +62,7 @@ export default function InformationWidgets() {
           </a>
 
           <a 
-            href="https://github.com/yourusername" 
+            href="https://github.com/tim-perez/EasyFile" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-[#232323] group transition-colors border border-transparent hover:border-gray-100 dark:hover:border-gray-800"
