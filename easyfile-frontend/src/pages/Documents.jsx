@@ -261,17 +261,20 @@ export default function Documents() {
                     <div className="col-span-2 flex items-center gap-3 pr-4">
                       {user?.role === 'Admin' && (
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button 
-                            onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
-                              ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
-                          >
-                            {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
-                          </button>
-                          {activePopoverId === doc.id && (
-                            <div className="absolute top-10 left-0 z-9999 w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-transparent dark:border-gray-700 origin-top-left animate-fade-in-up">
+                          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button 
+                              onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500
+                                ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
+                            >
+                              {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
+                            </button>
+                          </div>
+                          {activePopoverId === doc.id && user?.role === 'Admin' && (
+                            <div className="col-start-2 col-span-11 mt-1 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
                               
-                              <div className="p-4">
+                              {/* Styled EXACTLY like the sleek dropdown menu, but sits in the row */}
+                              <div className="w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4">
                                 <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
                                   Uploader Details
                                 </h4>
@@ -290,14 +293,14 @@ export default function Documents() {
                                     <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
                                   </div>
                                   
-                                  {/* NOTE: Only keep this line for RecycleBin.jsx. Remove for Documents.jsx if not needed. */}
+                                  {/* NOTE: Keep this line for RecycleBin.jsx. Remove for Documents.jsx if not needed. */}
                                   <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
                                     <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
                                     <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
                                   </div>
                                 </div>
                               </div>
-
+                              
                             </div>
                           )}
                         </div>
