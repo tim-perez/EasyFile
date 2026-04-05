@@ -8,8 +8,8 @@ services:
       - "5001:8080"
     environment:
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
-      - AWS__AccessKey=${AWS_ACCESS_KEY_ID}
-      - AWS__SecretKey=${AWS_SECRET_ACCESS_KEY}
+      - AWS__AccessKey=${AWS_ACCESS_KEY}
+      - AWS__SecretKey=${AWS_SECRET_KEY}
       - JwtSettings__SecretKey=${JWT_SECRET_KEY}
       - OpenAI__ApiKey=${OPENAI_API_KEY}
       - ASPNETCORE_ENVIRONMENT=Development
