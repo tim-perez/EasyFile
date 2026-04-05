@@ -275,6 +275,7 @@ export default function Documents() {
                                 <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
+                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{originalDocuments.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
                               </div>
                             </div>
                           )}
