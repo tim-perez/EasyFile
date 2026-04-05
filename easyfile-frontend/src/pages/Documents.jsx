@@ -273,7 +273,6 @@ export default function Documents() {
                           {activePopoverId === doc.id && user?.role === 'Admin' && (
                             <div className="col-start-2 col-span-11 mt-1 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
                               
-                              {/* Styled EXACTLY like the sleek dropdown menu, but sits in the row */}
                               <div className="w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4">
                                 <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
                                   Uploader Details
@@ -293,7 +292,6 @@ export default function Documents() {
                                     <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
                                   </div>
                                   
-                                  {/* NOTE: Keep this line for RecycleBin.jsx. Remove for Documents.jsx if not needed. */}
                                   <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
                                     <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
                                     <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
