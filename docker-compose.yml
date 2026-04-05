@@ -25,3 +25,8 @@ services:
       - easyfile-api
     ports:
       - "3000:80"
+    volumes:
+      - ./easyfile-frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
