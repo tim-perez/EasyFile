@@ -18,6 +18,7 @@ using EasyFile.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Serilog;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
 
 // ==========================================
 // 0. START SERILOG IMMEDIATELY
@@ -96,10 +97,15 @@ try
     {
         options.AddPolicy("StrictCorsPolicy", policy =>
         {
-            policy.WithOrigins(allowedOrigins) // <--- Injects the URLs dynamically
+            policy.SetIsOriginAllowed(origin => 
+                {
+                    if (allowedOrigins.Contains(origin)) return true;
+
+                    return origin.StartsWith("https://easy-file-") && origin.EndsWith(".vercel.app");
+                })
                 .AllowAnyHeader()
                 .AllowAnyMethod()
-                .AllowCredentials(); // Required if you ever implement Refresh Token cookies!
+                .AllowCredentials();
         });
     });
 
