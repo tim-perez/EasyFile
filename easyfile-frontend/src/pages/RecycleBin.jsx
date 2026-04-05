@@ -208,7 +208,7 @@ export default function RecycleBin() {
 
                     <div className="col-span-2 flex items-center gap-3 pr-4">
                       {user?.role === 'Admin' && (
-                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button 
                             onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
@@ -216,15 +216,13 @@ export default function RecycleBin() {
                           >
                             {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
                           </button>
-
                           {activePopoverId === doc.id && (
-                            <div className="absolute top-0 left-10 z-100 w-64 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+                            <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
                               <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
                               <div className="space-y-1 text-sm">
                                 <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-blue-600 dark:text-blue-400">{originalDocuments.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
                               </div>
                             </div>
                           )}
