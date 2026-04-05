@@ -269,14 +269,35 @@ export default function Documents() {
                             {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
                           </button>
                           {activePopoverId === doc.id && (
-                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-100 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-fade-in-up">                             
-                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
-                              <div className="space-y-1 text-sm">
-                                <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{originalDocuments.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
+                            <div className="absolute top-10 left-0 z-9999 w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-xl ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-transparent dark:border-gray-700 origin-top-left animate-fade-in-up">
+                              
+                              <div className="p-4">
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                  Uploader Details
+                                </h4>
+                                
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-gray-500 dark:text-gray-400">Name</span> 
+                                    <span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-gray-500 dark:text-gray-400">Account #</span> 
+                                    <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-gray-500 dark:text-gray-400">Role</span> 
+                                    <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
+                                  </div>
+                                  
+                                  {/* NOTE: Only keep this line for RecycleBin.jsx. Remove for Documents.jsx if not needed. */}
+                                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
+                                    <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
+                                    <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
+                                  </div>
+                                </div>
                               </div>
+
                             </div>
                           )}
                         </div>
