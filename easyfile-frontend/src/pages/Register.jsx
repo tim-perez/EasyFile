@@ -150,7 +150,7 @@ export default function Register() {
                   Admin Authorization Code *
                 </label>
                 <input
-                  type="password"
+                  type="text"
                   name="secretPassword"
                   required
                   value={formData.secretPassword}
