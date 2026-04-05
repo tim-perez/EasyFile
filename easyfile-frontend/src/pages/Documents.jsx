@@ -272,7 +272,7 @@ export default function Documents() {
                           </button>
 
                           {activePopoverId === doc.id && (
-                            <div className="mt-3 w-48 p-3 bg-white dark:bg-[#2a2a2a] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                            <div className="mt-3 w-48 p-3 bg-white dark:bg-[#2a2a2a] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative z-10">
                               <h4 className="font-bold text-gray-900 dark:text-white mb-1 pb-1 border-b border-gray-100 dark:border-gray-700 text-sm">Uploader Details</h4>
                               <div className="space-y-1 text-xs">
                                 <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
