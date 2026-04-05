@@ -206,7 +206,7 @@ export default function RecycleBin() {
                       <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />
                     </div>
 
-                    <div className="col-span-2 flex items-start gap-3 pr-4">
+                    <div className="col-span-2 flex items-center gap-3 pr-4">
                       {user?.role === 'Admin' && (
                         <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button 
@@ -217,13 +217,12 @@ export default function RecycleBin() {
                             {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
                           </button>
                           {activePopoverId === doc.id && (
-                            <div className="mt-3 w-48 p-3 bg-white dark:bg-[#2a2a2a] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative z-10">
-                              <h4 className="font-bold text-gray-900 dark:text-white mb-1 pb-1 border-b border-gray-100 dark:border-gray-700 text-sm">Uploader Details</h4>
-                              <div className="space-y-1 text-xs">
+                            <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
+                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
+                              <div className="space-y-1 text-sm">
                                 <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
                                 <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Total Uploads:</span> <span className="font-medium text-blue-600 dark:text-blue-400">{originalDocuments.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
                               </div>
                             </div>
                           )}
