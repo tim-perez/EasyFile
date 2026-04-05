@@ -216,13 +216,18 @@ export default function RecycleBin() {
                           >
                             {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
                           </button>
-                          {activePopoverId === doc.id && (
-                            <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
-                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
-                              <div className="space-y-1 text-sm">
-                                <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
+                          {activePopoverId === doc.id && user?.role === 'Admin' && (
+                            <div className="col-start-2 col-span-11 mt-2 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+                              <div className="w-full max-w-md p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                                <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
+                                
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <p><span className="text-gray-500 dark:text-gray-400 block text-xs uppercase tracking-wider mb-1">Name</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
+                                  <p><span className="text-gray-500 dark:text-gray-400 block text-xs uppercase tracking-wider mb-1">Account #</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
+                                  <p><span className="text-gray-500 dark:text-gray-400 block text-xs uppercase tracking-wider mb-1">Role</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>                                
+                                  <p><span className="text-gray-500 dark:text-gray-400 block text-xs uppercase tracking-wider mb-1">Total Uploads</span> <span className="font-medium text-blue-600 dark:text-blue-400">{originalDocuments.filter(d => d.uploaderId === doc.uploaderId).length}</span></p>
+                                </div>
+                                
                               </div>
                             </div>
                           )}
