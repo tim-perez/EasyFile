@@ -238,37 +238,26 @@ export default function RecycleBin() {
                                   <div className="flex justify-between items-center">
                                     <span className="text-gray-500 dark:text-gray-400">Role</span> 
                                     <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
-                                  </div>
-                                  
-                                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
-                                    <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
-                                    <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
-                                  </div>
+                                  </div>                          
                                 </div>
                               </div>
-                              
                             </div>
                           )}
                         </div>
                       )}
                     </div>
-
                     <div className="col-span-2 flex items-center pr-2 overflow-hidden">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
                     </div>
-
                     <div className="col-span-2 flex items-center pr-2">
                       <span className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1 rounded truncate">{doc.caseNumber || doc.CaseNumber || 'Missing'}</span>
                     </div>
-
                     <div className="col-span-1 flex items-center pr-2">
                       <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{doc.county || doc.County || 'Unknown'}</span>
                     </div>
-
                     <div className="col-span-1 flex items-center opacity-60">
                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">Recycled</span>
                     </div>
-
                     <div className="col-span-1 flex flex-col">
                       <span className="text-sm text-red-600 dark:text-red-400 whitespace-nowrap">{formatDate(doc.deletedAt || doc.DeletedAt || doc.createdAt || doc.CreatedAt || new Date())}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Deleted</span>
