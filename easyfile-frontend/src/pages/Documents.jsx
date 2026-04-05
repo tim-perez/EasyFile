@@ -283,10 +283,12 @@ export default function Documents() {
                                     <span className="text-gray-500 dark:text-gray-400">Name</span> 
                                     <span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span>
                                   </div>
+
                                   <div className="flex justify-between items-center">
                                     <span className="text-gray-500 dark:text-gray-400">Account #</span> 
                                     <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span>
                                   </div>
+
                                   <div className="flex justify-between items-center">
                                     <span className="text-gray-500 dark:text-gray-400">Role</span> 
                                     <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
@@ -298,7 +300,6 @@ export default function Documents() {
                                   </div>
                                 </div>
                               </div>
-                              
                             </div>
                           )}
                         </div>
@@ -308,9 +309,10 @@ export default function Documents() {
                         <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
                           {doc.fileName || doc.FileName || 'Unknown File'}
                         </button>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
                       </div>
                     </div>
-
+                    
                     <div className="col-span-2 flex items-center pr-2 overflow-hidden">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
                     </div>
