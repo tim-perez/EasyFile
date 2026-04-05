@@ -260,21 +260,45 @@ export default function Documents() {
                     </div>
                     <div className="col-span-2 flex items-center gap-3 pr-4">
                       {user?.role === 'Admin' && (
-                        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button 
-                            onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
-                              ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
-                          >
-                            {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
-                          </button>
-                          {activePopoverId === doc.id && (
-                            <div className="absolute top-10 left-0 z-50 w-56 p-4 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
-                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
-                              <div className="space-y-1 text-sm">
-                                <p><span className="text-gray-500 dark:text-gray-400">Name:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Account #:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></p>
-                                <p><span className="text-gray-500 dark:text-gray-400">Role:</span> <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></p>
+                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button 
+                              onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500
+                                ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
+                            >
+                              {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
+                            </button>
+                          </div>
+                          {activePopoverId === doc.id && user?.role === 'Admin' && (
+                            <div className="col-start-2 col-span-11 mt-1 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+                              
+                              <div className="w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4">
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                  Uploader Details
+                                </h4>
+                                
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-gray-500 dark:text-gray-400">Name</span> 
+                                    <span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span>
+                                  </div>
+
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-gray-500 dark:text-gray-400">Account #</span> 
+                                    <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span>
+                                  </div>
+
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-gray-500 dark:text-gray-400">Role</span> 
+                                    <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
+                                  </div>
+                                  
+                                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
+                                    <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
+                                    <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -285,9 +309,10 @@ export default function Documents() {
                         <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
                           {doc.fileName || doc.FileName || 'Unknown File'}
                         </button>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
                       </div>
                     </div>
-
+                    
                     <div className="col-span-2 flex items-center pr-2 overflow-hidden">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
                     </div>
