@@ -245,19 +245,31 @@ export default function RecycleBin() {
                           )}
                         </div>
                       )}
+
+                      <div className="flex flex-col overflow-hidden w-full opacity-60">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate w-full block" title={doc.fileName || doc.FileName}>
+                          {doc.fileName || doc.FileName || 'Unknown File'}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
+                      </div>
                     </div>
+
                     <div className="col-span-2 flex items-center pr-2 overflow-hidden">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
                     </div>
+
                     <div className="col-span-2 flex items-center pr-2">
                       <span className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1 rounded truncate">{doc.caseNumber || doc.CaseNumber || 'Missing'}</span>
                     </div>
+
                     <div className="col-span-1 flex items-center pr-2">
                       <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{doc.county || doc.County || 'Unknown'}</span>
                     </div>
+
                     <div className="col-span-1 flex items-center opacity-60">
                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400">Recycled</span>
                     </div>
+                    
                     <div className="col-span-1 flex flex-col">
                       <span className="text-sm text-red-600 dark:text-red-400 whitespace-nowrap">{formatDate(doc.deletedAt || doc.DeletedAt || doc.createdAt || doc.CreatedAt || new Date())}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Deleted</span>
