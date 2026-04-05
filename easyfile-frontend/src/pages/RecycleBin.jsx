@@ -208,7 +208,7 @@ export default function RecycleBin() {
 
                     <div className="col-span-2 flex items-start gap-3 pr-4">
                       {user?.role === 'Admin' && (
-                        <div className="flex flex-col shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button 
                             onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
@@ -216,7 +216,6 @@ export default function RecycleBin() {
                           >
                             {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
                           </button>
-
                           {activePopoverId === doc.id && (
                             <div className="mt-3 w-48 p-3 bg-white dark:bg-[#2a2a2a] rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 relative z-10">
                               <h4 className="font-bold text-gray-900 dark:text-white mb-1 pb-1 border-b border-gray-100 dark:border-gray-700 text-sm">Uploader Details</h4>

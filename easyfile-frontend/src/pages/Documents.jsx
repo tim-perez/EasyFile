@@ -260,7 +260,7 @@ export default function Documents() {
                     </div>
                     <div className="col-span-2 flex items-center gap-3 pr-4">
                       {user?.role === 'Admin' && (
-                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button 
                             onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105
