@@ -236,7 +236,7 @@ export default function Documents() {
           <div className="overflow-x-auto">
             <div className="w-full min-w-300">
               
-              {/* TABLE HEADER */}
+              {/* TABLE HEADER - ALWAYS VISIBLE */}
               <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <div className="col-span-1 flex items-center justify-center">
                   <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={documents.length > 0 && selectedIds.length === documents.length} onChange={(e) => handleSelectAll(e, documents)} />
@@ -250,105 +250,131 @@ export default function Documents() {
                 <div className="col-span-2 text-right">Actions</div>
               </div>
 
-              {/* TABLE BODY */}
-              <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                {documents.map((doc) => (
-                  <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'} ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : ''}`}>
-                    
-                    <div className="col-span-1 flex items-center justify-center">
-                      <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />                    
-                    </div>
-                    <div className="col-span-2 flex items-center gap-3 pr-4">
-                      {user?.role === 'Admin' && (
-                        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <button 
-                              onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500
-                                ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
-                            >
-                              {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
-                            </button>
-                          </div>
-                          {activePopoverId === doc.id && user?.role === 'Admin' && (
-                            <div className="col-start-2 col-span-11 mt-1 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-                              
-                              <div className="w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4">
-                                <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                  Uploader Details
-                                </h4>
+              {/* LOADING STATE - INSIDE THE TABLE */}
+              {isLoading && (
+                <div className="flex justify-center items-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+              )}
+
+              {/* EMPTY STATE - INSIDE THE TABLE */}
+              {!isLoading && documents.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+                  <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 shadow-sm">
+                      <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No documents found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-8 text-sm max-w-sm">No documents match your current filter settings.</p>
+                  {originalDocuments.length === 0 && (
+                    <button onClick={onOpenUploadModal} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors text-sm uppercase tracking-wider flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Upload Documents
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* TABLE BODY - ROWS */}
+              {!isLoading && documents.length > 0 && (
+                <div className="divide-y divide-gray-200 dark:divide-gray-800">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'} ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : ''}`}>
+                      
+                      <div className="col-span-1 flex items-center justify-center">
+                        <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />                    
+                      </div>
+                      
+                      <div className="col-span-2 flex items-center gap-3 pr-4">
+                        {user?.role === 'Admin' && (
+                          <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <button 
+                                onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500
+                                  ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
+                              >
+                                {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
+                              </button>
+                            </div>
+                            {activePopoverId === doc.id && user?.role === 'Admin' && (
+                              <div className="col-start-2 col-span-11 mt-1 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
                                 
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 dark:text-gray-400">Name</span> 
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span>
-                                  </div>
-
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 dark:text-gray-400">Account #</span> 
-                                    <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span>
-                                  </div>
-
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-gray-500 dark:text-gray-400">Role</span> 
-                                    <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
-                                  </div>
+                                <div className="w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4">
+                                  <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+                                    Uploader Details
+                                  </h4>
                                   
-                                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
-                                    <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
-                                    <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
+                                  <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-500 dark:text-gray-400">Name</span> 
+                                      <span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-500 dark:text-gray-400">Account #</span> 
+                                      <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-500 dark:text-gray-400">Role</span> 
+                                      <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
+                                      <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
+                                      <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex flex-col overflow-hidden w-full">
+                          <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
+                            {doc.fileName || doc.FileName || 'Unknown File'}
+                          </button>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
                         </div>
-                      )}
-
-                      <div className="flex flex-col overflow-hidden w-full">
-                        <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
-                          {doc.fileName || doc.FileName || 'Unknown File'}
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
                       </div>
-                    </div>
-                    
-                    <div className="col-span-2 flex items-center pr-2 overflow-hidden">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
-                    </div>
+                      
+                      <div className="col-span-2 flex items-center pr-2 overflow-hidden">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
+                      </div>
 
-                    <div className="col-span-2 flex items-center pr-2">
-                      <span className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1 rounded truncate">{doc.caseNumber || doc.CaseNumber || 'Missing'}</span>
-                    </div>
+                      <div className="col-span-2 flex items-center pr-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1 rounded truncate">{doc.caseNumber || doc.CaseNumber || 'Missing'}</span>
+                      </div>
 
-                    <div className="col-span-1 flex items-center pr-2">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{doc.county || doc.County || 'Unknown'}</span>
-                    </div>
+                      <div className="col-span-1 flex items-center pr-2">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{doc.county || doc.County || 'Unknown'}</span>
+                      </div>
 
-                    <div className="col-span-1 flex items-center">
-                      <StatusBadge status={doc.status || doc.Status} />
-                    </div>
+                      <div className="col-span-1 flex items-center">
+                        <StatusBadge status={doc.status || doc.Status} />
+                      </div>
 
-                    <div className="col-span-1 flex flex-col">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate)}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
-                    </div>
+                      <div className="col-span-1 flex flex-col">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate)}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
+                      </div>
 
-                    <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View Report</button>
-                      {user?.role !== 'Guest' && (
-                        <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      )}
-                    </div>
+                      <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View Report</button>
+                        {user?.role !== 'Guest' && (
+                          <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        )}
+                      </div>
 
-                  </div>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           
+          {/* PAGINATION FOOTER */}
           {totalPages > 1 && (
             <div className="flex flex-wrap items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1a1a1a]">
               <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 sm:mb-0">
@@ -375,7 +401,6 @@ export default function Documents() {
               </div>
             </div>
           )}
-
         </div>
       )}
 
