@@ -6,14 +6,19 @@ export default function InformationWidgets() {
       
       {/* TUTORIAL WIDGET */}
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Tutorial: Upload a Document</h2>
+        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">DEMO: A Tour of EasyFile</h2>
+
+        <div 
+          onClick={() => window.open('https://youtu.be/IvApdUT0ICk', '_blank')}
+          className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800"
+        ></div>
         
         <div className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800">
            <div className="flex flex-col items-center gap-2">
              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
              </div>
-             <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">Watch Tutorial</span>
+             <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">Watch Demo</span>
            </div>
            <span className="absolute top-3 right-3 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">
              EasyFile Insider
@@ -22,7 +27,7 @@ export default function InformationWidgets() {
 
         <h3 className="text-sm font-bold mb-2 text-gray-900 dark:text-white">Using AI to Automate Document Review</h3>
         <p className="text-xs text-gray-600 dark:text-gray-400 mb-5 leading-relaxed">
-          In this tutorial, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
+          In this demo, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
         </p>
         
         <button className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all">
