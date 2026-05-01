@@ -1,31 +1,69 @@
 import React from 'react';
+import { useState } from 'react';
 
 export default function InformationWidgets() {
+
+  const [isPlayingDemo, setIsPlayingDemo] = useState(false);
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       
       {/* TUTORIAL WIDGET */}
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Tutorial: Upload a Document</h2>
+        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">DEMO: A Tour of EasyFile</h2>
         
-        <div className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800">
-           <div className="flex flex-col items-center gap-2">
-             <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
-               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-             </div>
-             <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">Watch Tutorial</span>
-           </div>
-           <span className="absolute top-3 right-3 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">
-             EasyFile Insider
-           </span>
+        {/* INLINE YOUTUBE PLAYER FACADE */}
+        <div className="aspect-video bg-gray-900 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group border border-gray-200 dark:border-gray-800 shadow-inner">
+          
+          {isPlayingDemo ? (
+            <iframe
+              width="100%"
+              height="100%"
+              src="https://www.youtube.com/embed/IvApdUT0ICk?autoplay=1"
+              title="EasyFile Demo"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full"
+            ></iframe>
+          ) : (
+            <div 
+              onClick={() => setIsPlayingDemo(true)}
+              className="w-full h-full flex flex-col items-center justify-center cursor-pointer"
+              style={{
+                backgroundImage: `url('https://img.youtube.com/vi/IvApdUT0ICk/maxresdefault.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              {/* Dark overlay to make the red play button pop */}
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+
+              <div className="relative z-10 flex flex-col items-center gap-2">
+                <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white shadow-2xl group-hover:scale-110 transition-transform">
+                  {/* Play icon shifted slightly right to look optically centered */}
+                  <svg className="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                </div>
+              </div>
+              <span className="absolute z-10 top-3 right-3 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">
+                EasyFile Insider
+              </span>
+            </div>
+          )}
+
         </div>
 
         <h3 className="text-sm font-bold mb-2 text-gray-900 dark:text-white">Using AI to Automate Document Review</h3>
         <p className="text-xs text-gray-600 dark:text-gray-400 mb-5 leading-relaxed">
-          In this tutorial, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
+          In this demo, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
         </p>
         
-        <button className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all">
+        {/* 2. THE CLICKABLE BOTTOM BUTTON */}
+        <button 
+          onClick={() => window.open('https://www.youtube.com/watch?v=IvApdUT0ICk', '_blank')}
+          className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all"
+        >
           Watch on YouTube
         </button>
       </div>
