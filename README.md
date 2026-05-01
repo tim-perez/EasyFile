@@ -1,9 +1,14 @@
 # EasyFile 📄
 
 **[🚀 View Live Application: easy-file-eta.vercel.app](https://easy-file-eta.vercel.app/)**
-**[📺 Watch the Video Demo on YouTube](https://youtu.be/IvApdUT0ICk)**
 
 **EasyFile** is a full-stack, cloud-native web application designed to streamline the management, uploading, and organization of legal court documents. Built as an Engineering Master's Capstone Project, it features a modern, responsive UI, robust Role-Based Access Control (RBAC), and a secure, scalable backend architecture.
+
+## 🎥 Video Demo: AI Document Review
+*Click the image below to watch a full walkthrough of EasyFile's AI-powered review system.*
+
+[![EasyFile Demo](https://img.youtube.com/vi/IvApdUT0ICk/maxresdefault.jpg)]
+(https://www.youtube.com/watch?v=IvApdUT0ICk)
 
 ## ✨ Features
 * **Role-Based Access Control:** Distinct experiences for `Admin` and `Customer` accounts, including secure authorization codes for administrative registration.
