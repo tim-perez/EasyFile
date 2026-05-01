@@ -7,7 +7,7 @@
 ## 🎥 Video Demo: AI Document Review
 *Click the image below to watch a full walkthrough of EasyFile's AI-powered review system.*
 
-[![EasyFile Demo](https://img.youtube.com/vi/IvApdUT0ICk/maxresdefault.jpg)]
+![EasyFile Demo](https://img.youtube.com/vi/IvApdUT0ICk/maxresdefault.jpg)
 (https://www.youtube.com/watch?v=IvApdUT0ICk)
 
 ## ✨ Features
