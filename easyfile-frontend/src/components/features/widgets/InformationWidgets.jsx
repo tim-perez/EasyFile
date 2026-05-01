@@ -7,13 +7,12 @@ export default function InformationWidgets() {
       {/* TUTORIAL WIDGET */}
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">DEMO: A Tour of EasyFile</h2>
-
+        
+        {/* 1. THE CLICKABLE THUMBNAIL */}
         <div 
           onClick={() => window.open('https://www.youtube.com/watch?v=IvApdUT0ICk', '_blank')}
           className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800"
-        ></div>
-        
-        <div className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800">
+        >
            <div className="flex flex-col items-center gap-2">
              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
@@ -30,11 +29,15 @@ export default function InformationWidgets() {
           In this demo, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
         </p>
         
-        <button className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all">
+        {/* 2. THE CLICKABLE BOTTOM BUTTON */}
+        <button 
+          onClick={() => window.open('https://www.youtube.com/watch?v=IvApdUT0ICk', '_blank')}
+          className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all"
+        >
           Watch on YouTube
         </button>
       </div>
-
+      
       {/* CONNECT WITH DEVELOPER WIDGET */}
       <div className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex-1">
         <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Connect with the Developer</h2>
