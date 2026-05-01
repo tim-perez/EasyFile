@@ -9,7 +9,7 @@ export default function InformationWidgets() {
         <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">DEMO: A Tour of EasyFile</h2>
 
         <div 
-          onClick={() => window.open('https://youtu.be/IvApdUT0ICk', '_blank')}
+          onClick={() => window.open('https://www.youtube.com/watch?v=IvApdUT0ICk', '_blank')}
           className="aspect-video bg-gray-100 dark:bg-black rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group cursor-pointer border border-gray-200 dark:border-gray-800"
         ></div>
         
