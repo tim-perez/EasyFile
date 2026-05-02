@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import logo from '../assets/EasyFileLogo3.png';
 
-export default function Register() {
-  const navigate = useNavigate();
-  
+export default function Register() {  
   const [formData, setFormData] = useState({
     accountType: 'Customer',
     firstName: '',
@@ -22,6 +20,9 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false); 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // New state to manage the success screen
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,11 +55,8 @@ export default function Register() {
         secretPassword: formData.secretPassword
       });
 
-      setStatusMessage({ type: 'success', text: 'Account successfully registered! Redirecting to login...' });
-      
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      // Instead of navigating, show the success screen
+      setIsRegistered(true);
 
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'An error occurred during registration. Please try again.';
@@ -68,6 +66,37 @@ export default function Register() {
     }
   };
 
+  // Render the success screen if registration passed
+  if (isRegistered) {
+      return (
+        <div className="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
+          <div className="sm:mx-auto sm:w-full sm:max-w-xl transition-all">
+            <div className="flex flex-col items-center mb-8">
+              <img src={logo} alt="EasyFile Logo" className="h-16 w-auto mb-2" />
+              <h2 className="mt-2 text-center text-2xl font-bold text-gray-900 dark:text-white">
+                Registration Successful
+              </h2>
+            </div>
+            <div className="p-8 rounded-2xl shadow-lg border transition-all duration-300 bg-white border-gray-100 dark:bg-[#1f1f1f] dark:border-gray-800 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-2">Check your email</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    We sent a verification link to <span className="font-semibold">{formData.email}</span>. Please click the link to activate your EasyFile account.
+                </p>
+                <Link to="/login" className="w-full inline-flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
+                    Go to Login
+                </Link>
+            </div>
+          </div>
+        </div>
+      );
+  }
+
+  // Original form rendering below
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 bg-gray-50 text-gray-900 dark:bg-[#121212] dark:text-white">
       
