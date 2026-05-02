@@ -3,41 +3,70 @@ using System.Net.Mail;
 
 namespace EasyFile.Services;
 
-public interface IEmailService {
+public interface IEmailService
+{
     Task SendEmailAsync(string toEmail, string subject, string body);
 }
 
-public class EmailService : IEmailService {
+public class EmailService : IEmailService
+{
     private readonly IConfiguration _config;
-    public EmailService(IConfiguration config) => _config = config;
 
-    public async Task SendEmailAsync(string toEmail, string subject, string body) {
-        try {
+    public EmailService(IConfiguration config)
+    {
+        _config = config;
+    }
+
+    public async Task SendEmailAsync(string toEmail, string subject, string body)
+    {
+        try
+        {
             Console.WriteLine($"\n[EMAIL SERVICE] Attempting to send email to {toEmail}...");
-            
+
             var email = _config["EmailSettings:SenderEmail"];
             var pass = _config["EmailSettings:AppPassword"];
-            var host = _config["EmailSettings:SmtpServer"];
-            var port = int.Parse(_config["EmailSettings:SmtpPort"] ?? "587");
-            
-            using var client = new SmtpClient(host, port) {
+
+            using var client = new SmtpClient("smtp.gmail.com", 465)
+            {
                 EnableSsl = true,
+                UseDefaultCredentials = false,
                 Credentials = new NetworkCredential(email, pass),
-                Timeout = 20000, 
                 DeliveryMethod = SmtpDeliveryMethod.Network,
-                UseDefaultCredentials = false
+                Timeout = 10000
             };
 
-            var message = new MailMessage(email!, toEmail, subject, body) { IsBodyHtml = true };
-            
-            await client.SendMailAsync(message); 
-            
+            Console.WriteLine("[EMAIL SERVICE] Connecting to Gmail SMTP...");
+
+            using var message = new MailMessage
+            {
+                From = new MailAddress(email!, "EasyFile"),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true
+            };
+
+            message.To.Add(toEmail);
+
+            await client.SendMailAsync(message);
+
             Console.WriteLine("[EMAIL SERVICE] SUCCESS! Email accepted by Google.\n");
         }
-        catch (Exception ex) {
-            Console.WriteLine($"\n[EMAIL SERVICE ERROR] Email dispatch failed!");
-            Console.WriteLine($"Reason: {ex.Message}");
-            if (ex.InnerException != null) Console.WriteLine($"Inner Detail: {ex.InnerException.Message}\n");
+        catch (SmtpException ex)
+        {
+            Console.WriteLine("\n[EMAIL SERVICE ERROR] SMTP failure");
+            Console.WriteLine($"StatusCode: {ex.StatusCode}");
+            Console.WriteLine($"Message: {ex.Message}");
+
+            if (ex.InnerException != null)
+                Console.WriteLine($"Inner: {ex.InnerException.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("\n[EMAIL SERVICE ERROR] General failure");
+            Console.WriteLine(ex.Message);
+
+            if (ex.InnerException != null)
+                Console.WriteLine(ex.InnerException.Message);
         }
     }
 }
