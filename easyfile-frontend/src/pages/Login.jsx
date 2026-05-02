@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthProvider';
 import logo from '../assets/EasyFileLogo3.png'; 
 
@@ -22,7 +22,7 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -80,9 +80,9 @@ export default function Login() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Password
                 </label>
-                <a href="#" className="text-xs font-medium text-blue-600 hover:text-blue-500">
+                <Link to="/forgot-password" className="text-xs font-medium text-blue-600 hover:text-blue-500">
                   Forgot?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <input

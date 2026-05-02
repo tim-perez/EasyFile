@@ -99,8 +99,13 @@ try
         {
             policy.SetIsOriginAllowed(origin => 
                 {
+                    // 1. Explicitly allow local React development 
+                    if (origin == "http://localhost:3000") return true;
+
+                    // 2. Allow origins defined in appsettings/environment variables
                     if (allowedOrigins.Contains(origin)) return true;
 
+                    // 3. Allow dynamic Vercel preview deployments
                     return origin.StartsWith("https://easy-file-") && origin.EndsWith(".vercel.app");
                 })
                 .AllowAnyHeader()
@@ -158,6 +163,7 @@ try
     builder.Services.AddScoped<IDocumentService, DocumentService>(); 
     builder.Services.AddScoped<ITextractService, TextractService>();
     builder.Services.AddScoped<IPdfReportService, PdfReportService>();
+    builder.Services.AddScoped<IEmailService, EmailService>();
 
     builder.Services.AddHostedService<GuestCleanupService>();
 
