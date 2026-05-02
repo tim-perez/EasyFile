@@ -9,6 +9,7 @@ using EasyFile.Data;
 using EasyFile.Models;
 using EasyFile.Models.DTOs;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EasyFile.Controllers
 {
@@ -111,6 +112,21 @@ namespace EasyFile.Controllers
                 firstName = guestUser.FirstName, lastName = guestUser.LastName, email = guestUser.Email,
                 message = "Guest login successful."
             });
+        }
+
+        [HttpGet("health")]
+        [AllowAnonymous]
+        public async Task<IActionResult> KeepAlivePing([FromServices] AppDbContext dbContext)
+        {
+            try
+            {
+                await dbContext.Database.ExecuteSqlRawAsync("SELECT 1");
+                return Ok(new { status = "Awake", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "Database Asleep or Error", message = ex.Message });
+            }
         }
 
         private string GenerateJwtToken(User user)
