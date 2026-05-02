@@ -26,10 +26,8 @@ services:
       - AWS__SecretKey=${AWS_SECRET_KEY}
       - AWS__Region=${AWS_REGION}
       - AWS__BucketName=${AWS_BUCKET_NAME}
-      - EmailSettings__SmtpServer=smtp.gmail.com
-      - EmailSettings__SmtpPort=587
-      - EmailSettings__SenderEmail=${GMAIL_EMAIL}
-      - EmailSettings__AppPassword=${GMAIL_APP_PASSWORD}
+      - EmailSettings__SendGridApiKey=${SENDGRID_API_KEY}
+      - EmailSettings__SenderEmail=${SENDGRID_SENDER_EMAIL}
       - Frontend__BaseUrl=http://localhost:3000
       - JwtSettings__SecretKey=${JWT_SECRET_KEY}
       - OpenAI__ApiKey=${OPENAI_API_KEY}

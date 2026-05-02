@@ -1,72 +1,44 @@
-using System.Net;
-using System.Net.Mail;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace EasyFile.Services;
 
-public interface IEmailService
-{
+public interface IEmailService {
     Task SendEmailAsync(string toEmail, string subject, string body);
 }
 
-public class EmailService : IEmailService
-{
+public class EmailService : IEmailService {
     private readonly IConfiguration _config;
+    
+    public EmailService(IConfiguration config) => _config = config;
 
-    public EmailService(IConfiguration config)
-    {
-        _config = config;
-    }
+    public async Task SendEmailAsync(string toEmail, string subject, string body) {
+        try {
+            Console.WriteLine($"\n[EMAIL SERVICE] Attempting SendGrid dispatch to {toEmail}...");
+            
+            var apiKey = _config["EmailSettings:SendGridApiKey"];
+            var senderEmail = _config["EmailSettings:SenderEmail"];
+            
+            var client = new SendGridClient(apiKey);
+            var from = new EmailAddress(senderEmail, "EasyFile System");
+            var to = new EmailAddress(toEmail);
 
-    public async Task SendEmailAsync(string toEmail, string subject, string body)
-    {
-        try
-        {
-            Console.WriteLine($"\n[EMAIL SERVICE] Attempting to send email to {toEmail}...");
-
-            var email = _config["EmailSettings:SenderEmail"];
-            var pass = _config["EmailSettings:AppPassword"];
-
-            using var client = new SmtpClient("smtp.gmail.com", 465)
-            {
-                EnableSsl = true,
-                UseDefaultCredentials = false,
-                Credentials = new NetworkCredential(email, pass),
-                DeliveryMethod = SmtpDeliveryMethod.Network,
-                Timeout = 10000
-            };
-
-            Console.WriteLine("[EMAIL SERVICE] Connecting to Gmail SMTP...");
-
-            using var message = new MailMessage
-            {
-                From = new MailAddress(email!, "EasyFile"),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-
-            message.To.Add(toEmail);
-
-            await client.SendMailAsync(message);
-
-            Console.WriteLine("[EMAIL SERVICE] SUCCESS! Email accepted by Google.\n");
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, body, body);
+            
+            var response = await client.SendEmailAsync(msg);
+            
+            if (response.IsSuccessStatusCode) {
+                Console.WriteLine("[EMAIL SERVICE] SUCCESS! Email accepted by SendGrid.\n");
+            } 
+            else {
+                var responseBody = await response.Body.ReadAsStringAsync();
+                Console.WriteLine($"\n[EMAIL SERVICE ERROR] SendGrid API rejected the request. Status: {response.StatusCode}");
+                Console.WriteLine($"Reason: {responseBody}\n");
+            }
         }
-        catch (SmtpException ex)
-        {
-            Console.WriteLine("\n[EMAIL SERVICE ERROR] SMTP failure");
-            Console.WriteLine($"StatusCode: {ex.StatusCode}");
-            Console.WriteLine($"Message: {ex.Message}");
-
-            if (ex.InnerException != null)
-                Console.WriteLine($"Inner: {ex.InnerException.Message}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("\n[EMAIL SERVICE ERROR] General failure");
-            Console.WriteLine(ex.Message);
-
-            if (ex.InnerException != null)
-                Console.WriteLine(ex.InnerException.Message);
+        catch (Exception ex) {
+            Console.WriteLine($"\n[EMAIL SERVICE ERROR] Code execution failed!");
+            Console.WriteLine($"Reason: {ex.Message}\n");
         }
     }
 }
