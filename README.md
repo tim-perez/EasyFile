@@ -42,3 +42,5 @@ This project uses Docker to ensure a consistent development environment across a
    ```bash
    git clone [https://github.com/tim-perez/EasyFile.git](https://github.com/EasyFile/easyfile.git)
    cd easyfile
+   docker compose up -d
+   
