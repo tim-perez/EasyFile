@@ -272,7 +272,7 @@ export default function DashboardLayout() {
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-0 top-12 mt-1 w-75 bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 py-2">
+                <div className="absolute right-0 top-12 mt-1 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#282828] rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 py-2">
                   
                   <div className="px-4 py-3 flex items-start gap-4 border-b border-gray-200 dark:border-gray-700 mb-2">
                     <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
@@ -281,14 +281,14 @@ export default function DashboardLayout() {
                         alt="User Profile" 
                       />
                     </div>
-                    <div className="flex flex-col overflow-hidden">
+                    <div className="flex min-w-0 flex-col">
                       <span className="font-medium text-base text-gray-900 dark:text-white truncate">
                         {user?.firstName} {user?.lastName}
                       </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-1.5">
-                        <span>{user?.role} Account</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                        <span>Account #{user?.id}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 leading-5">
+                        <span className="shrink-0">{user?.role} Account</span>
+                        <span className="w-1 h-1 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                        <span className="break-all">Account #{user?.id}</span>
                       </span>
                     </div>
                   </div>

@@ -6,6 +6,8 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 // Public Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Protected Pages
 import DashboardLayout from './layouts/DashboardLayout';
@@ -14,6 +16,8 @@ import Documents from './pages/Documents';
 import RecycleBin from './pages/RecycleBin';
 import Account from './pages/Account';
 import Users from './pages/Users';
+import VerifyEmail from './pages/VerifyEmail';
+
 
 function App() {
     return (
@@ -25,7 +29,9 @@ function App() {
                     {/* ========================================== */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    
+                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     {/* ========================================== */}
                     {/* PROTECTED ROUTES (Requires Login)          */}
                     {/* ========================================== */}

@@ -23,4 +23,21 @@ namespace EasyFile.Validators
             RuleFor(x => x.Password).NotEmpty();
         }
     }
+
+    public class ForgotPasswordDtoValidator : AbstractValidator<ForgotPasswordDto>
+    {
+        public ForgotPasswordDtoValidator()
+        {
+            RuleFor(x => x.Email).NotEmpty().EmailAddress().WithMessage("A valid email is required.");
+        }
+    }
+
+    public class ResetPasswordDtoValidator : AbstractValidator<ResetPasswordDto>
+    {
+        public ResetPasswordDtoValidator()
+        {
+            RuleFor(x => x.Token).NotEmpty().WithMessage("Reset token is required.");
+            RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(6).WithMessage("New password must be at least 6 characters.");
+        }
+    }
 }
