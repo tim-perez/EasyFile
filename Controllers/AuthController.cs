@@ -209,6 +209,7 @@ namespace EasyFile.Controllers
         }
 
         [HttpGet("health")]
+        [HttpHead("health")]
         [AllowAnonymous]
         public async Task<IActionResult> KeepAlivePing([FromServices] AppDbContext dbContext)
         {
@@ -217,9 +218,9 @@ namespace EasyFile.Controllers
                 await dbContext.Database.ExecuteSqlRawAsync("SELECT 1");
                 return Ok(new { status = "Awake", timestamp = DateTime.UtcNow });
             }
-            catch (Exception ex)
+            catch (Exception databaseException)
             {
-                return StatusCode(500, new { status = "Database Asleep or Error", message = ex.Message });
+                return StatusCode(500, new { status = "Database Error", message = databaseException.Message });
             }
         }
 
