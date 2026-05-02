@@ -38,6 +38,13 @@ namespace EasyFile.Models
         public required string PasswordHash { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsEmailVerified { get; set; } = false;
+        
+        public string? VerificationToken { get; set; }
+        public DateTime? VerificationTokenExpires { get; set; }
+        
+        public string? ResetPasswordToken { get; set; }
+        public DateTime? ResetPasswordTokenExpires { get; set; }
 
         [InverseProperty("Uploader")]
         public ICollection<Document> UploadedDocuments { get; set; } = new List<Document>();

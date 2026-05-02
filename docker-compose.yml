@@ -1,15 +1,36 @@
 services:
+  easyfile-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: easyfile-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${LOCAL_DB_PASSWORD:-EasyFile_local_123!}
+    ports:
+      - "1433:1433"
+    volumes:
+      - easyfile-sqlserver-data:/var/opt/mssql
+
   easyfile-api:
     build: 
       context: . 
       dockerfile: Dockerfile
     container_name: easyfile-api
+    depends_on:
+      - easyfile-db
     ports:
       - "5001:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__DefaultConnection=Server=easyfile-db,1433;Database=EasyFileLocal;User Id=sa;Password=${LOCAL_DB_PASSWORD:-EasyFile_local_123!};TrustServerCertificate=True;Encrypt=False;
       - AWS__AccessKey=${AWS_ACCESS_KEY}
       - AWS__SecretKey=${AWS_SECRET_KEY}
+      - AWS__Region=${AWS_REGION}
+      - AWS__BucketName=${AWS_BUCKET_NAME}
+      - EmailSettings__SmtpServer=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__SenderEmail=${GMAIL_EMAIL}
+      - EmailSettings__AppPassword=${GMAIL_APP_PASSWORD}
+      - Frontend__BaseUrl=http://localhost:3000
       - JwtSettings__SecretKey=${JWT_SECRET_KEY}
       - OpenAI__ApiKey=${OPENAI_API_KEY}
       - ASPNETCORE_ENVIRONMENT=Development
@@ -30,3 +51,6 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  easyfile-sqlserver-data:
