@@ -21,7 +21,7 @@ services:
     ports:
       - "5001:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Server=easyfile-db,1433;Database=EasyFileLocal;User Id=sa;Password=${LOCAL_DB_PASSWORD:-EasyFile_local_123!};TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING_LOCAL}
       - AWS__AccessKey=${AWS_ACCESS_KEY}
       - AWS__SecretKey=${AWS_SECRET_KEY}
       - AWS__Region=${AWS_REGION}
