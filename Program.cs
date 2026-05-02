@@ -202,7 +202,7 @@ try
         app.UseSwaggerUI();
     }
 
-    // app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
     app.UseCors("StrictCorsPolicy");
 
     app.UseRateLimiter();
