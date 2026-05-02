@@ -23,7 +23,9 @@ public class EmailService : IEmailService {
             using var client = new SmtpClient(host, port) {
                 EnableSsl = true,
                 Credentials = new NetworkCredential(email, pass),
-                Timeout = 15000 
+                Timeout = 20000, 
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                UseDefaultCredentials = false
             };
 
             var message = new MailMessage(email!, toEmail, subject, body) { IsBodyHtml = true };
