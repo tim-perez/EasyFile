@@ -9,7 +9,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-   const [isColdStart, setIsColdStart] = useState(false);
+  const [isColdStart, setIsColdStart] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
+  const [isGuestColdStart, setIsGuestColdStart] = useState(false);
+
 
   // Enterprise pattern: Using the custom hook instead of raw useContext
   const { login, loginAsGuest } = useAuth();
@@ -40,11 +43,23 @@ export default function Login() {
 
   const handleGuestLogin = async (e) => { 
     e.preventDefault(); 
+    setIsGuestLoading(true);
+    setIsGuestColdStart(false);
+
+    const guestColdStartTimer = setTimeout(() => {
+      setIsGuestColdStart(true);
+    }, 4000);
+
     try {
       await loginAsGuest(); 
       navigate('/dashboard'); 
     } catch (error) {
       console.error("Guest login failed", error);
+      setError('Guest login failed. Please try again.');
+    } finally {
+      clearTimeout(guestColdStartTimer);
+      setIsGuestLoading(false);
+      setIsGuestColdStart(false);
     }
   };
 
@@ -162,9 +177,24 @@ export default function Login() {
             <button
               type="button"
               onClick={handleGuestLogin}
-              className="w-full flex justify-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-semibold transition duration-150 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200 dark:bg-[#3a3a3a] dark:text-gray-200 dark:border-gray-700 dark:hover:bg-[#4a4a4a]"
+              disabled={isGuestLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border rounded-lg shadow-sm text-sm font-semibold transition duration-150 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200 dark:bg-[#3a3a3a] dark:text-gray-200 dark:border-gray-700 dark:hover:bg-[#4a4a4a] disabled:opacity-60"
             >
-              Continue as Guest
+                {!isGuestLoading && 'Continue as Guest'}
+                
+                {isGuestLoading && !isGuestColdStart && (
+                    <span>Authenticating...</span>
+                )}
+
+                {isGuestLoading && isGuestColdStart && (
+                    <span className="flex items-center">
+                        <svg className="animate-spin h-4 w-4 mr-2 text-gray-700 dark:text-gray-200" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Waking up secure database (approx. 15s)...
+                    </span>
+                )}
             </button>
           </div>
           
