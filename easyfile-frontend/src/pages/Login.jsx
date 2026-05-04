@@ -27,7 +27,7 @@ export default function Login() {
 
     const coldStartTimer = setTimeout(() => {
       setIsColdStart(true);
-    }, 4000);
+    }, 2000);
 
     try {
       await login(email, password);
@@ -48,7 +48,7 @@ export default function Login() {
 
     const guestColdStartTimer = setTimeout(() => {
       setIsGuestColdStart(true);
-    }, 4000);
+    }, 2000);
 
     try {
       await loginAsGuest(); 

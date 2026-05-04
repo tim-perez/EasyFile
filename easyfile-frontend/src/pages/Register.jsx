@@ -47,7 +47,7 @@ export default function Register() {
 
     const coldStartTimer = setTimeout(() => {
       setIsColdStart(true);
-    }, 4000);
+    }, 2000);
 
     try {
       await api.post('/auth/register', {
