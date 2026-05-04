@@ -20,6 +20,7 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false); 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isColdStart, setIsColdStart] = useState(false); 
   
   // New state to manage the success screen
   const [isRegistered, setIsRegistered] = useState(false);
@@ -35,6 +36,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatusMessage({ type: '', text: '' });
+    setIsColdStart(false);
     
     if (formData.password !== formData.confirmPassword) {
       setStatusMessage({ type: 'error', text: 'Passwords do not match.' });
@@ -42,6 +44,10 @@ export default function Register() {
     }
 
     setIsSubmitting(true);
+
+    const coldStartTimer = setTimeout(() => {
+      setIsColdStart(true);
+    }, 4000);
 
     try {
       await api.post('/auth/register', {
@@ -55,14 +61,15 @@ export default function Register() {
         secretPassword: formData.secretPassword
       });
 
-      // Instead of navigating, show the success screen
       setIsRegistered(true);
 
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'An error occurred during registration. Please try again.';
       setStatusMessage({ type: 'error', text: errorMsg });
     } finally {
+      clearTimeout(coldStartTimer);
       setIsSubmitting(false);
+      setIsColdStart(false);
     }
   };
 
@@ -239,9 +246,23 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 transition duration-150 mt-2"
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 transition duration-150 mt-2"
               >
-                {isSubmitting ? 'Registering...' : 'Register'}
+                {!isSubmitting && 'Register'}
+                
+                {isSubmitting && !isColdStart && (
+                    <span>Registering...</span>
+                )}
+
+                {isSubmitting && isColdStart && (
+                    <span className="flex items-center">
+                        <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Waking up secure database (approx. 15s)...
+                    </span>
+                )}
               </button>
             </div>
             
