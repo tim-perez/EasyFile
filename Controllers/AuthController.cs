@@ -206,24 +206,17 @@ namespace EasyFile.Controllers
                 firstName = guestUser.FirstName, lastName = guestUser.LastName, email = guestUser.Email,
                 message = "Guest login successful."
             });
-        }
-
+                }
         [HttpGet("health")]
         [HttpHead("health")]
         [AllowAnonymous]
-        public async Task<IActionResult> KeepAlivePing([FromServices] AppDbContext dbContext)
+        public IActionResult KeepAlivePing()
         {
-            try
-            {
-                await dbContext.Database.ExecuteSqlRawAsync("SELECT 1");
-                return Ok(new { status = "Awake", timestamp = DateTime.UtcNow });
-            }
-            catch (Exception databaseException)
-            {
-                return StatusCode(500, new { status = "Database Error", message = databaseException.Message });
-            }
+            return Ok(new {
+                status = "Render Awake. Database Asleep.",
+                timestamp = DateTime.UtcNow
+            });
         }
-
         private string GenerateJwtToken(User user)
         {
             var secretKey = _configuration["JwtSettings:SecretKey"] ?? throw new InvalidOperationException("JWT Secret is missing.");
