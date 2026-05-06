@@ -13,6 +13,7 @@ import ResetPassword from './pages/ResetPassword';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
+import Submissions from './pages/Submissions';
 import RecycleBin from './pages/RecycleBin';
 import Account from './pages/Account';
 import Users from './pages/Users';
@@ -43,6 +44,7 @@ function App() {
                             
                             {/* Standard features for all logged-in users */}
                             <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="submissions" element={<Submissions />} />
                             <Route path="documents" element={<Documents />} />
                             <Route path="recycle-bin" element={<RecycleBin />} />
                             <Route path="account" element={<Account />} />

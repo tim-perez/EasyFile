@@ -33,6 +33,8 @@ public class Document
     public string RefersTo { get; set; } = string.Empty;
     public string Representation { get; set; } = string.Empty;
     public string Warnings { get; set; } = string.Empty; 
+    public string SuggestedDocumentTypes { get; set; } = string.Empty;
+    public decimal DocumentFee { get; set; }
     
     // User Interaction & State
     public int? StarRating { get; set; }
@@ -43,8 +45,10 @@ public class Document
     // Foreign Keys
     public int UploaderId { get; set; }
     public int? ReviewerId { get; set; }
+    public int? SubmissionId { get; set; }
 
     // Navigation Properties
     public User Uploader { get; set; } = null!;
     public User? Reviewer { get; set; }
+    public Submission? Submission { get; set; }
 }

@@ -225,3 +225,10 @@
 /Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Sinks.Debug.dll
 /Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/Serilog.Sinks.File.dll
 /Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/easyfile-frontend/vercel.json
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/SendGrid.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/StarkbankEcdsa.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/PdfSharpCore.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/ICSharpCode.SharpZipLib.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/SixLabors.Fonts.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/SixLabors.ImageSharp.dll
+/Users/timperez/Documents/GitHub/EasyFile/bin/Debug/net10.0/de/PdfSharpCore.resources.dll

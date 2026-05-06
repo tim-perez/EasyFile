@@ -1,6 +1,8 @@
 using AutoMapper;
 using EasyFile.Models;
 using EasyFile.Models.DTOs;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace EasyFile.Mappings
 {
@@ -22,13 +24,33 @@ namespace EasyFile.Mappings
                 .ForMember(dest => dest.FiledBy, opt => opt.MapFrom(src => src.FiledBy ?? "Unknown"))
                 .ForMember(dest => dest.RefersTo, opt => opt.MapFrom(src => src.RefersTo ?? "Unknown"))
                 .ForMember(dest => dest.Representation, opt => opt.MapFrom(src => src.Representation ?? "Unknown"))
-                .ForMember(dest => dest.Prediction, opt => opt.MapFrom(src => src.Prediction ?? "Unknown"))
+                .ForMember(dest => dest.Prediction, opt => opt.MapFrom(src => NormalizePrediction(src.Prediction, src.Warnings)))
+                .ForMember(dest => dest.SuggestedDocumentTypes, opt => opt.MapFrom(src =>
+                    src.SuggestedDocumentTypes != null ? string.Join("|", src.SuggestedDocumentTypes) : ""))
+                .ForMember(dest => dest.DocumentFee, opt => opt.MapFrom(src => ParseFee(src.EstimatedFee)))
                 .ForMember(dest => dest.Warnings, opt => opt.MapFrom(src => 
                     src.Warnings != null ? string.Join("|", src.Warnings) : ""));
 
             CreateMap<BulkEditRequest, Document>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => 
                     srcMember != null && !(srcMember is string str && string.IsNullOrWhiteSpace(str))));
+        }
+
+        private static string NormalizePrediction(string? prediction, List<string>? warnings)
+        {
+            if (warnings?.Any(w => !string.IsNullOrWhiteSpace(w)) == true) return "Rejected";
+            if (string.Equals(prediction, "Likely Rejected", StringComparison.OrdinalIgnoreCase)) return "Rejected";
+            if (string.Equals(prediction, "Likely Accepted", StringComparison.OrdinalIgnoreCase)) return "Accepted";
+            return prediction ?? "Unknown";
+        }
+
+        private static decimal ParseFee(string? fee)
+        {
+            if (string.IsNullOrWhiteSpace(fee)) return 0m;
+            var match = Regex.Match(fee, @"\d+(\.\d{1,2})?");
+            return match.Success && decimal.TryParse(match.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
+                ? value
+                : 0m;
         }
     }
 }

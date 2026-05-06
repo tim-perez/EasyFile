@@ -14,6 +14,7 @@ namespace EasyFile.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Document> Documents { get; set; } 
+        public DbSet<Submission> Submissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -23,6 +24,16 @@ namespace EasyFile.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            modelBuilder.Entity<Submission>()
+                .HasIndex(s => s.SubmissionNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<Submission>()
+                .HasMany(s => s.Documents)
+                .WithOne(d => d.Submission)
+                .HasForeignKey(d => d.SubmissionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

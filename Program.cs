@@ -176,6 +176,7 @@ try
     builder.Services.AddScoped<IEmailService, EmailService>();
 
     builder.Services.AddHostedService<GuestCleanupService>();
+    builder.Services.AddScoped<IPdfProcessingService, PdfProcessingService>();
 
     // ==========================================
     // 8. MAPPING & VALIDATION

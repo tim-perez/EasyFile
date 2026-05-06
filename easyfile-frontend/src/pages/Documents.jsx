@@ -5,7 +5,6 @@ import { useDocuments } from '../hooks/useDocuments';
 import api from '../services/api';
 
 import SortableHeader from '../components/common/SortableHeader';
-import StatusBadge from '../components/common/StatusBadge';
 import DocumentReportModal from '../components/features/DocumentReportModal'; 
 import EditDocumentModal from '../components/features/EditDocumentModal'; 
 
@@ -120,6 +119,14 @@ export default function Documents() {
     if (!dateString) return 'Unknown Date';
     return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
+
+  const formatFee = (doc) => {
+    const fee = doc.documentFee ?? doc.DocumentFee;
+    if (fee !== undefined && fee !== null) return `$${Number(fee).toFixed(2)}`;
+    return doc.estimatedFee || doc.EstimatedFee || '$0.00';
+  };
+
+  const getSubmissionNumber = (doc) => doc.submission?.submissionNumber || doc.Submission?.SubmissionNumber || '0000';
 
   const selectedDocumentObjects = originalDocuments.filter(doc => selectedIds.includes(doc.id));
   const activeFilterCount = Object.values(activeFilters).filter(val => val !== '').length;
@@ -241,13 +248,14 @@ export default function Documents() {
                 <div className="col-span-1 flex items-center justify-center">
                   <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={documents.length > 0 && selectedIds.length === documents.length} onChange={(e) => handleSelectAll(e, documents)} />
                 </div>
+                <SortableHeader label="Submission #" sortKey="submissionNumber" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="File Name" sortKey="fileName" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="AI Document Title" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="Case Number" sortKey="caseNumber" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="County" sortKey="county" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="Status" sortKey="status" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Suggested Type" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Exact Title" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Fee" sortKey="documentFee" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Prediction" sortKey="prediction" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Date" sortKey="date" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
-                <div className="col-span-2 text-right">Actions</div>
+                <div className="col-span-1 text-right">Actions</div>
               </div>
 
               {/* LOADING STATE - INSIDE THE TABLE */}
@@ -282,6 +290,10 @@ export default function Documents() {
                         <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />                    
                       </div>
                       
+                      <div className="col-span-1 flex items-center">
+                        <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">#{getSubmissionNumber(doc)}</span>
+                      </div>
+
                       <div className="col-span-2 flex items-center gap-3 pr-4">
                         {user?.role === 'Admin' && (
                           <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -338,19 +350,21 @@ export default function Documents() {
                       </div>
                       
                       <div className="col-span-2 flex items-center pr-2 overflow-hidden">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{doc.documentTitle || doc.DocumentTitle}</span>
+                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">{doc.eFilingDocType || doc.EFilingDocType || doc.documentTitle || doc.DocumentTitle || 'Unknown'}</span>
                       </div>
 
-                      <div className="col-span-2 flex items-center pr-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-[#2a2a2a] px-2 py-1 rounded truncate">{doc.caseNumber || doc.CaseNumber || 'Missing'}</span>
+                      <div className="col-span-2 flex items-center pr-2 overflow-hidden">
+                        <span className="text-sm text-gray-900 dark:text-gray-200 truncate" title={doc.documentTitle || doc.DocumentTitle}>{doc.documentTitle || doc.DocumentTitle || 'Unknown'}</span>
                       </div>
 
                       <div className="col-span-1 flex items-center pr-2">
-                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{doc.county || doc.County || 'Unknown'}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{formatFee(doc)}</span>
                       </div>
 
                       <div className="col-span-1 flex items-center">
-                        <StatusBadge status={doc.status || doc.Status} />
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase ${(doc.prediction || doc.Prediction) === 'Rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>
+                          {doc.prediction || doc.Prediction || 'Unknown'}
+                        </span>
                       </div>
 
                       <div className="col-span-1 flex flex-col">
@@ -358,8 +372,8 @@ export default function Documents() {
                         <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
                       </div>
 
-                      <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View Report</button>
+                      <div className="col-span-1 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View</button>
                         {user?.role !== 'Guest' && (
                           <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>

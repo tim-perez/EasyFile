@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using System.IO.Compression;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models.DTOs;
 using EasyFile.Models.Pagination;
+using EasyFile.Services; 
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace EasyFile.Controllers
@@ -25,6 +28,7 @@ namespace EasyFile.Controllers
         private readonly ITextractService _textractService;
         private readonly IAiReviewService _aiReviewService;
         private readonly IPdfReportService _pdfReportService;
+        private readonly IPdfProcessingService _pdfProcessingService;
         private readonly ILogger<DocumentsController> _logger;
         private readonly IMapper _mapper;
 
@@ -34,6 +38,7 @@ namespace EasyFile.Controllers
             ITextractService textractService,
             IAiReviewService aiReviewService,
             IPdfReportService pdfReportService,
+            IPdfProcessingService pdfProcessingService,
             ILogger<DocumentsController> logger,
             IMapper mapper)
         {
@@ -42,68 +47,103 @@ namespace EasyFile.Controllers
             _textractService = textractService;
             _aiReviewService = aiReviewService;
             _pdfReportService = pdfReportService;
+            _pdfProcessingService = pdfProcessingService; 
             _logger = logger;
             _mapper = mapper;
         }
 
         [HttpPost("upload")]
         [EnableRateLimiting("UploadPolicy")]
-        public async Task<IActionResult> UploadDocument(IFormFile file, [FromForm] string userId)
+        public async Task<IActionResult> UploadDocument([FromForm] string userId)
         {
+            var uploadedKeys = new List<string>();
             try
             {
-                if (file == null || file.Length == 0) return BadRequest(new { message = "No file uploaded." });
+                var files = Request.Form.Files.ToList();
+                if (files.Count == 0 || files.Any(file => file.Length == 0)) return BadRequest(new { message = "No file uploaded." });
                 if (!int.TryParse(userId, out int parsedUserId)) return BadRequest(new { message = "Invalid user ID." });
+
+                const long maxFileSize = 25 * 1024 * 1024;
+                var invalidFile = files.FirstOrDefault(file =>
+                    !string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
+                    !Path.GetExtension(file.FileName).Equals(".pdf", StringComparison.OrdinalIgnoreCase));
+                if (invalidFile != null) return BadRequest(new { message = "Upload Failed: EasyFile only accepts PDF legal documents." });
+
+                var oversizedFile = files.FirstOrDefault(file => file.Length > maxFileSize);
+                if (oversizedFile != null) return BadRequest(new { message = $"Upload Failed: {oversizedFile.FileName} is too large. Maximum file size is 25 MB." });
 
                 var userRecord = await _dbContext.Users.FindAsync(parsedUserId);
                 if (userRecord != null && userRecord.AccountType == "Guest")
                 {
                     var currentDocCount = await _dbContext.Documents.CountAsync(d => d.UploaderId == userRecord.Id);
-                    if (currentDocCount >= 5) return StatusCode(403, new { message = "Guest limit reached." });
+                    if (currentDocCount + files.Count > 5) return StatusCode(403, new { message = "Guest limit reached." });
                 }
 
-                var originalFileName = file.FileName;
-                var fileKey = await _documentService.UploadDocumentAsync(file, userId);
-
-                using var fileStream = file.OpenReadStream();
-                var extractedText = await _textractService.ExtractTextAsync(fileStream);
-
-                if (string.IsNullOrWhiteSpace(extractedText) || extractedText.Length < 50)
+                var submission = new EasyFile.Models.Submission
                 {
-                    var failedDocument = new EasyFile.Models.Document
+                    UploaderId = parsedUserId,
+                    SubmissionNumber = await GenerateSubmissionNumberAsync()
+                };
+
+                foreach (var file in files)
+                {
+                    var originalFileName = file.FileName;
+                    var fileKey = await _documentService.UploadDocumentAsync(file, userId);
+                    uploadedKeys.Add(fileKey);
+
+                    string extractedText;
+                    using (var fullFileStream = file.OpenReadStream())
                     {
-                        UploaderId = parsedUserId, FileName = originalFileName, DocumentTitle = "Non-Text Searchable",
-                        CaseNumber = "Missing", FileUrl = fileKey, FileType = file.ContentType, Status = "Failed", County = "Unknown"
-                    };
-                    _dbContext.Documents.Add(failedDocument);
-                    await _dbContext.SaveChangesAsync();
-                    return Ok(new { message = "Document saved, but flagged as non-text searchable.", documentId = failedDocument.Id });
+                        try 
+                        {
+                            using var firstPageStream = _pdfProcessingService.ExtractFirstPage(fullFileStream);
+                            
+                            extractedText = await _textractService.ExtractTextAsync(firstPageStream);
+                        }
+                        catch (Exception pdfEx)
+                        {
+                            _logger.LogError(pdfEx, "Failed to extract the first page from {FileName}", originalFileName);
+                            await DeleteUploadedKeysAsync(uploadedKeys);
+                            return BadRequest(new { message = $"Upload Failed: Could not process the PDF structure of {originalFileName}." });
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(extractedText) || extractedText.Length < 50)
+                    {
+                        await DeleteUploadedKeysAsync(uploadedKeys);
+                        return BadRequest(new { message = $"Upload Failed: {originalFileName} could not be read as a text-searchable legal PDF." });
+                    }
+
+                    var aiReportJson = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
+                    
+                    var aiReportDto = JsonSerializer.Deserialize<AiDocumentReportDto>(aiReportJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
+                                      ?? new AiDocumentReportDto();
+
+                    if (aiReportDto.Status == "REJECT_NON_LEGAL_DOCUMENT")
+                    {
+                        await DeleteUploadedKeysAsync(uploadedKeys);
+                        return BadRequest(new { message = $"Upload Failed: {originalFileName} is not recognized as a legal document." });
+                    }
+
+                    var newDocument = _mapper.Map<EasyFile.Models.Document>(aiReportDto);
+                    newDocument.UploaderId = parsedUserId;
+                    newDocument.FileName = originalFileName ?? "Unknown_File.pdf";
+                    newDocument.FileUrl = fileKey ?? "Missing_URL";
+                    newDocument.FileType = file.ContentType ?? "application/pdf";
+                    newDocument.Submission = submission;
+                    submission.Documents.Add(newDocument);
                 }
 
-                var aiReportJson = await _aiReviewService.GenerateDocumentReportAsync(extractedText);
-                
-                var aiReportDto = JsonSerializer.Deserialize<AiDocumentReportDto>(aiReportJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
-                                  ?? new AiDocumentReportDto();
+                ApplySubmissionSummary(submission);
 
-                if (aiReportDto.Status == "REJECT_NON_LEGAL_DOCUMENT")
-                {
-                    await _documentService.DeleteDocumentAsync(fileKey);
-                    return BadRequest(new { message = "Upload Failed: The uploaded file is not recognized as a legal document." });
-                }
-
-                var newDocument = _mapper.Map<EasyFile.Models.Document>(aiReportDto);
-                newDocument.UploaderId = parsedUserId;
-                newDocument.FileName = originalFileName ?? "Unknown_File.pdf";
-                newDocument.FileUrl = fileKey ?? "Missing_URL";
-                newDocument.FileType = file.ContentType ?? "application/pdf";
-
-                _dbContext.Documents.Add(newDocument);
+                _dbContext.Submissions.Add(submission);
                 await _dbContext.SaveChangesAsync();
 
-                return Ok(new { message = "Upload and AI analysis complete!", documentId = newDocument.Id });
+                return Ok(new { message = "Submission and AI analysis complete!", submissionId = submission.Id, submissionNumber = submission.SubmissionNumber });
             }
             catch (Exception ex)
             {
+                await DeleteUploadedKeysAsync(uploadedKeys);
                 _logger.LogError(ex, "Error processing document upload.");
                 return StatusCode(500, new { message = "An error occurred.", error = ex.InnerException?.Message ?? ex.Message });
             }
@@ -152,6 +192,9 @@ namespace EasyFile.Controllers
                 {
                     "filename" => isDesc ? query.OrderByDescending(d => d.FileName) : query.OrderBy(d => d.FileName),
                     "documenttitle" => isDesc ? query.OrderByDescending(d => d.DocumentTitle) : query.OrderBy(d => d.DocumentTitle),
+                    "submissionnumber" => isDesc ? query.OrderByDescending(d => d.Submission!.SubmissionNumber) : query.OrderBy(d => d.Submission!.SubmissionNumber),
+                    "prediction" => isDesc ? query.OrderByDescending(d => d.Prediction) : query.OrderBy(d => d.Prediction),
+                    "documentfee" => isDesc ? query.OrderByDescending(d => d.DocumentFee) : query.OrderBy(d => d.DocumentFee),
                     "casenumber" => isDesc ? query.OrderByDescending(d => d.CaseNumber) : query.OrderBy(d => d.CaseNumber),
                     "county" => isDesc ? query.OrderByDescending(d => d.County) : query.OrderBy(d => d.County),
                     "status" => isDesc ? query.OrderByDescending(d => d.Status) : query.OrderBy(d => d.Status),
@@ -160,6 +203,7 @@ namespace EasyFile.Controllers
 
                 // 5. Apply Server-Side Pagination
                 var documents = await query
+                    .Include(d => d.Submission)
                     .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
                     .Take(queryParams.PageSize)
                     .ToListAsync();
@@ -234,7 +278,7 @@ namespace EasyFile.Controllers
 
                 if (userRole != "Admin") query = query.Where(d => d.UploaderId == userId);
 
-                var documents = await query.OrderByDescending(d => d.DeletedAt).ToListAsync();
+                var documents = await query.Include(d => d.Submission).OrderByDescending(d => d.DeletedAt).ToListAsync();
                 return Ok(documents);
             }
             catch (Exception ex)
@@ -263,6 +307,53 @@ namespace EasyFile.Controllers
                 _logger.LogError(ex, "Failed to restore document {Id}.", id);
                 return StatusCode(500, new { message = "Failed to restore document." });
             }
+        }
+
+        private async Task<string> GenerateSubmissionNumberAsync()
+        {
+            var random = new Random();
+            for (var attempt = 0; attempt < 25; attempt++)
+            {
+                var candidate = random.Next(0, 10000).ToString("D4", CultureInfo.InvariantCulture);
+                if (!await _dbContext.Submissions.AnyAsync(s => s.SubmissionNumber == candidate)) return candidate;
+            }
+
+            var count = await _dbContext.Submissions.CountAsync();
+            return (count % 10000).ToString("D4", CultureInfo.InvariantCulture);
+        }
+
+        private async Task DeleteUploadedKeysAsync(IEnumerable<string> fileKeys)
+        {
+            foreach (var fileKey in fileKeys.Distinct().Where(key => !string.IsNullOrWhiteSpace(key)))
+            {
+                try { await _documentService.DeleteDocumentAsync(fileKey); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Failed to clean up uploaded file {FileKey}.", fileKey); }
+            }
+        }
+
+        private static void ApplySubmissionSummary(EasyFile.Models.Submission submission)
+        {
+            var documents = submission.Documents.ToList();
+            submission.County = FirstKnown(documents.Select(d => d.County), "Unknown");
+            submission.CaseNumber = FirstKnown(documents.Select(d => d.CaseNumber), "Not Yet Assigned", "Missing", "");
+            submission.FilingType = submission.CaseNumber == "Not Yet Assigned" ? "Case Initiation" : "Subsequent";
+            submission.CaseTitle = FirstKnown(documents.Select(d => d.CaseTitle), "Unknown");
+            submission.CaseCategory = FirstKnown(documents.Select(d => d.CaseCategory), "Unknown");
+            submission.CaseType = FirstKnown(documents.Select(d => d.CaseType), "Unknown");
+            submission.PlaintiffsOrPetitioners = FirstKnown(documents.Select(d => d.FiledBy), "Unknown");
+            submission.DefendantsOrRespondents = FirstKnown(documents.Select(d => d.RefersTo), "Unknown");
+            submission.Attorneys = FirstKnown(documents.Select(d => d.Representation), "None", "Self-Represented");
+            submission.TotalCourtFees = documents.Sum(d => d.DocumentFee);
+
+            var accepted = documents.Count(d => string.Equals(d.Prediction, "Accepted", StringComparison.OrdinalIgnoreCase));
+            var rejected = documents.Count(d => string.Equals(d.Prediction, "Rejected", StringComparison.OrdinalIgnoreCase));
+            submission.Summary = $"{accepted}/{documents.Count} document(s) likely to be accepted. {rejected}/{documents.Count} document(s) likely to be rejected.";
+        }
+
+        private static string FirstKnown(IEnumerable<string?> values, string fallback, params string[] alsoUnknown)
+        {
+            var unknown = new HashSet<string>(alsoUnknown.Append("Unknown").Append("Processing..."), StringComparer.OrdinalIgnoreCase);
+            return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) && !unknown.Contains(value.Trim()))?.Trim() ?? fallback;
         }
 
         [HttpDelete("{id}/permanent")]

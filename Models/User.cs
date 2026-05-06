@@ -49,6 +49,8 @@ namespace EasyFile.Models
         [InverseProperty("Uploader")]
         public ICollection<Document> UploadedDocuments { get; set; } = new List<Document>();
 
+        public ICollection<Submission> Submissions { get; set; } = new List<Submission>();
+
         [InverseProperty("Reviewer")]
         public ICollection<Document> ReviewedDocuments { get; set; } = new List<Document>();
     }

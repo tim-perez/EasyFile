@@ -14,15 +14,16 @@ If the text appears to be a receipt, menu, invoice, random picture, personal let
 { ""status"": ""REJECT_NON_LEGAL_DOCUMENT"" }
 EXCEPTION TO GATEKEEPER: If the text contains California pleading paper line numbers (e.g., a vertical sequence of numbers from 1 to 28) or basic court headings, it IS a legal document. Do NOT reject it here. Process it normally and use the ""prediction"" and ""warnings"" keys to flag if it is blank or incomplete.
 
-If it IS a legal document, extract the data and return a JSON object with EXACTLY these keys (do not omit any keys):
+If it IS a legal document, extract the data from the first page supplied and return a JSON object with EXACTLY these keys (do not omit any keys):
 - ""documentTitle"": The exact title of the document (e.g., 'SUMMONS', 'COMPLAINT', 'CIVIL CASE COVER SHEET').
-- ""eFilingDocType"": The generic e-filing category. CRITICAL RULE: If the documentTitle is short or standard (e.g., 'SUMMONS', 'JUDGMENT', 'COMPLAINT', 'ANSWER'), output that EXACT documentTitle here. ONLY genericize it if the title is long and complex, and when you do, you MUST append "" (name extension)"" to the generic title. For example, convert 'Plaintiff's Opposition to Defendant's Motion to Strike' into 'Opposition (name extension)', or 'Declaration of John Doe in Support of...' into 'Declaration (name extension)'. NEVER output 'Unknown' if you already know the documentTitle; just fall back to using the documentTitle.
+- ""eFilingDocType"": The most likely e-filing category. CRITICAL RULE: If the documentTitle is short, standard, or form-based (e.g., 'SUMMONS', 'JUDGMENT', 'COMPLAINT', 'ANSWER', 'MC-100', 'CIV-110', 'FL-100'), output that exact recognized document type here. ONLY genericize it if the title is long and user-created.
+- ""suggestedDocumentTypes"": An array of up to three options. For standard court forms, include the exact recognized title first. For user-created pleading titles, include: (1) the first meaningful title words, (2) the first title word plus ' (name extension)', and (3) 'Document - Other'.
 - ""estimatedFee"": Estimate the filing fee. Motions are typically $60. Stipulations/Orders are $20. Summons/Complaints vary but default to $435 for unlimited. If unknown, return ""$0.00"".
 - ""caseTitle"": The full case name or title. If missing, return ""Unknown"".
 - ""caseNumber"": The official court case number. If missing, return """".
 - ""county"": The county court jurisdiction (e.g., 'Los Angeles'). If missing, return ""Unknown"".
 - ""status"": If critical fields are missing, return ""Incomplete"". Otherwise, return ""Processed"".
-- ""prediction"": Output EXACTLY 'Likely Accepted' or 'Likely Rejected'. If the document is missing top-left caption information, party names, court address, or required signatures, you MUST output 'Likely Rejected'.
+- ""prediction"": Output EXACTLY 'Accepted' or 'Rejected'. If the document is missing top-left caption information, party names, court address, or required signatures, you MUST output 'Rejected'.
 - ""filingType"": 'Subsequent Filing' if a case number exists, otherwise 'Case Initiation'.
 - ""caseCategory"": 'CIVIL - Unlimited' if demands exceed $35,000, 'CIVIL - Limited' if under. If not civil, check if the document falls under 'FAMILY', 'PROBATE', or 'SMALL CLAIMS'. If still unclear, return ""Unknown"".
 - ""caseType"": Guess the closest case type. If still unclear, return ""Unknown"".
@@ -31,8 +32,10 @@ If it IS a legal document, extract the data and return a JSON object with EXACTL
 - ""representation"": The law firm or attorney name. If no clear representation, return ""Self-Represented"".
 - ""warnings"": An array of strings containing pre-flight warnings. CRITICAL RULES:
   1. Top-Left Caption: Actively check if the Attorney Name, State Bar Number, and Address are missing (often indicated by blank pleading paper lines 1-5). If missing, warn: 'Missing Attorney/Filer Information in Top-Left Caption'.
-  2. Core Data: Check for missing Court Name, Plaintiff Name, or Defendant Name.
+  2. Core Data: Check for missing Court Name, Plaintiff Name, Defendant Name, Case Name, and Document Title.
   3. Signatures: ONLY warn about a missing signature if there is an explicit, visible signature line that is blank (e.g., 'Dated: ___ Signed: ___'). Do NOT warn about missing signatures on a first-page pleading where no signature block exists.
+  4. Mandatory Checkboxes: If the document asks the filer to check one of several required boxes and no option is clearly selected, warn: 'Missing Mandatory Checkboxes'.
+  5. Court Address and County: Warn when the court address is missing. For pleading paper documents, warn when the county line is blank.
   If there are no warnings, return an empty array [].
 
 Output ONLY valid raw JSON. Do NOT include markdown formatting, backticks (```), or explanations.";
