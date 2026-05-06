@@ -55,9 +55,9 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
               
               {/* Dynamic Prediction Badge */}
               <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${
-                (document.prediction || document.Prediction) === 'Likely Rejected' 
+                (document.prediction || document.Prediction) === 'Rejected' || (document.prediction || document.Prediction) === 'Likely Rejected' 
                   ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800' 
-                  : (document.prediction || document.Prediction) === 'Likely Accepted'
+                  : (document.prediction || document.Prediction) === 'Accepted' || (document.prediction || document.Prediction) === 'Likely Accepted'
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800'
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
               }`}>
@@ -93,7 +93,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
                 ))
               ) : (
                 <li className="text-sm text-green-700 dark:text-green-400 font-medium">
-                  No critical issues detected by AI.
+                  None
                 </li>
               )}
             </ul>
@@ -161,8 +161,13 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
               <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">3. Document Specifics</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">E-Filing Document Type</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Suggested Document Type(s)</p>
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{document.eFilingDocType || document.EFilingDocType || 'Unknown'}</p>
+                  {(document.suggestedDocumentTypes || document.SuggestedDocumentTypes) && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {(document.suggestedDocumentTypes || document.SuggestedDocumentTypes).split('|').filter(Boolean).join(', ')}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Exact Document Title</p>
