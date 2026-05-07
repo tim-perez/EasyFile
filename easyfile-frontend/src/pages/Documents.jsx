@@ -241,17 +241,16 @@ export default function Documents() {
       ) : (
         <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="overflow-x-auto">
-            <div className="w-full min-w-300">
+            <div className="w-full min-w-300 min-h-75">
               
               {/* TABLE HEADER - ALWAYS VISIBLE */}
               <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <div className="col-span-1 flex items-center justify-center">
                   <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={documents.length > 0 && selectedIds.length === documents.length} onChange={(e) => handleSelectAll(e, documents)} />
                 </div>
-                <SortableHeader label="Submission #" sortKey="submissionNumber" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="File Name" sortKey="fileName" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Submission #" sortKey="submissionNumber" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="File Name" sortKey="fileName" colSpan={3} currentSort={sortConfig} onSort={handleSort} />               
                 <SortableHeader label="Suggested Type" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="Exact Title" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Fee" sortKey="documentFee" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Prediction" sortKey="prediction" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Date" sortKey="date" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
@@ -286,92 +285,71 @@ export default function Documents() {
                   {documents.map((doc) => (
                     <div key={doc.id} className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition-all duration-300 group ${selectedIds.includes(doc.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-gray-50 dark:hover:bg-[#282828]'} ${globalSearchQuery ? 'ring-inset ring-2 ring-blue-400 bg-blue-50/30 dark:bg-blue-900/20' : ''}`}>
                       
+                      {/* Checkbox */}
                       <div className="col-span-1 flex items-center justify-center">
                         <input type="checkbox" className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer transition-opacity ${selectedIds.includes(doc.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} checked={selectedIds.includes(doc.id)} onChange={() => handleSelectOne(doc.id)} />                    
                       </div>
                       
-                      <div className="col-span-1 flex items-center">
-                        <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100">#{getSubmissionNumber(doc)}</span>
-                      </div>
-
-                      <div className="col-span-2 flex items-center gap-3 pr-4">
+                      {/* Avatar + Submission # Grouped Together */}
+                      <div className="col-span-2 flex items-center gap-3">
                         {user?.role === 'Admin' && (
                           <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                              <button 
-                                onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500
-                                  ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
-                              >
-                                {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
-                              </button>
-                            </div>
-                            {activePopoverId === doc.id && user?.role === 'Admin' && (
-                              <div className="col-start-2 col-span-11 mt-1 mb-2 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-                                
-                                <div className="w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4">
-                                  <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-                                    Uploader Details
-                                  </h4>
-                                  
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-gray-500 dark:text-gray-400">Name</span> 
-                                      <span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-gray-500 dark:text-gray-400">Account #</span> 
-                                      <span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-gray-500 dark:text-gray-400">Role</span> 
-                                      <span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span>
-                                    </div>
-                                    
-                                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50">
-                                      <span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span> 
-                                      <span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span>
-                                    </div>
-                                  </div>
+                            <button 
+                              onClick={() => setActivePopoverId(activePopoverId === doc.id ? null : doc.id)}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}`}
+                            >
+                              {userDictionary[doc.uploaderId]?.accountType === 'Guest' ? 'GU' : `${userDictionary[doc.uploaderId]?.firstName?.[0] || ''}${userDictionary[doc.uploaderId]?.lastName?.[0] || ''}`.toUpperCase() || '??'}
+                            </button>
+                            
+                            {/* Converted to absolute positioning to match Submissions tab */}
+                            {activePopoverId === doc.id && (
+                              <div className="absolute left-0 top-10 z-100 w-64 bg-white dark:bg-[#2a2a2a] rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 border border-transparent dark:border-gray-700 p-4 animate-fade-in-up">
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">Uploader Details</h4>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Name</span><span className="font-medium text-gray-900 dark:text-gray-100">{userDictionary[doc.uploaderId]?.firstName} {userDictionary[doc.uploaderId]?.lastName}</span></div>
+                                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Account #</span><span className="font-medium text-gray-900 dark:text-gray-200">{doc.uploaderId}</span></div>
+                                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Role</span><span className="font-medium text-gray-900 dark:text-gray-200">{userDictionary[doc.uploaderId]?.accountType}</span></div>
+                                  <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50 dark:border-gray-700/50"><span className="text-gray-500 dark:text-gray-400 font-medium">Total Uploads</span><span className="font-bold text-blue-600 dark:text-blue-400">{originalDocuments?.filter(d => d.uploaderId === doc.uploaderId).length}</span></div>
                                 </div>
                               </div>
                             )}
                           </div>
                         )}
+                        <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 truncate">#{getSubmissionNumber(doc)}</span>
+                      </div>
 
-                        <div className="flex flex-col overflow-hidden w-full">
-                          <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
-                            {doc.fileName || doc.FileName || 'Unknown File'}
-                          </button>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
-                        </div>
+                      {/* File Name - Increased to col-span-3 */}
+                      <div className="col-span-3 flex flex-col justify-center overflow-hidden pr-2">
+                        <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
+                          {doc.fileName || doc.FileName || 'Unknown File'}
+                        </button>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate w-full block">PDF Document</span>
                       </div>
                       
+                      {/* Suggested Type */}
                       <div className="col-span-2 flex items-center pr-2 overflow-hidden">
                         <span className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">{doc.eFilingDocType || doc.EFilingDocType || doc.documentTitle || doc.DocumentTitle || 'Unknown'}</span>
                       </div>
 
-                      <div className="col-span-2 flex items-center pr-2 overflow-hidden">
-                        <span className="text-sm text-gray-900 dark:text-gray-200 truncate" title={doc.documentTitle || doc.DocumentTitle}>{doc.documentTitle || doc.DocumentTitle || 'Unknown'}</span>
-                      </div>
-
+                      {/* Fee */}
                       <div className="col-span-1 flex items-center pr-2">
                         <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{formatFee(doc)}</span>
                       </div>
 
+                      {/* Prediction */}
                       <div className="col-span-1 flex items-center">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase ${(doc.prediction || doc.Prediction) === 'Rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>
                           {doc.prediction || doc.Prediction || 'Unknown'}
                         </span>
                       </div>
 
-                      <div className="col-span-1 flex flex-col">
+                      {/* Date */}
+                      <div className="col-span-1 flex flex-col justify-center">
                         <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate)}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
                       </div>
 
+                      {/* Actions */}
                       <div className="col-span-1 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View</button>
                         {user?.role !== 'Guest' && (
