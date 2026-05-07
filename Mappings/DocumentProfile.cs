@@ -38,10 +38,21 @@ namespace EasyFile.Mappings
 
         private static string NormalizePrediction(string? prediction, List<string>? warnings)
         {
-            if (warnings?.Any(w => !string.IsNullOrWhiteSpace(w)) == true) return "Rejected";
+            if (warnings?.Any(IsSubstantiveWarning) == true) return "Rejected";
             if (string.Equals(prediction, "Likely Rejected", StringComparison.OrdinalIgnoreCase)) return "Rejected";
             if (string.Equals(prediction, "Likely Accepted", StringComparison.OrdinalIgnoreCase)) return "Accepted";
             return prediction ?? "Unknown";
+        }
+
+        private static bool IsSubstantiveWarning(string? warning)
+        {
+            if (string.IsNullOrWhiteSpace(warning)) return false;
+
+            var normalized = warning.Trim();
+            return !string.Equals(normalized, "None", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(normalized, "None.", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(normalized, "(none)", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(normalized, "[]", StringComparison.OrdinalIgnoreCase);
         }
 
         private static decimal ParseFee(string? fee)
