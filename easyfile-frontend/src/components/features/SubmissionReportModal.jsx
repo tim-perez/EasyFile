@@ -30,6 +30,11 @@ export default function SubmissionReportModal({ isOpen, onClose, submission, onV
   };
 
   const value = (text, fallback = 'Unknown') => text || fallback;
+  const calculatedTotalFees = documents.reduce((total, doc) => {
+    const feeStr = String(doc.documentFee || doc.DocumentFee || doc.estimatedFee || doc.EstimatedFee || "$0.00");
+    const numericFee = parseFloat(feeStr.replace(/[^0-9.-]+/g,"")) || 0;
+    return total + numericFee;
+  }, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 md:p-12">
@@ -92,7 +97,7 @@ export default function SubmissionReportModal({ isOpen, onClose, submission, onV
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a]">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Court Fees</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">${Number(submission.totalCourtFees || submission.TotalCourtFees || 0).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">${calculatedTotalFees.toFixed(2)}</p>
             </div>
             <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5 bg-gray-50 dark:bg-[#1a1a1a] lg:col-span-2">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Summary</p>

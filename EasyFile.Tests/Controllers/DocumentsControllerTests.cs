@@ -10,6 +10,7 @@ using EasyFile.Controllers;
 using EasyFile.Data;
 using EasyFile.Interfaces;
 using EasyFile.Models;
+using EasyFile.Services;
 
 namespace EasyFile.Tests.Controllers
 {
@@ -20,6 +21,7 @@ namespace EasyFile.Tests.Controllers
         private readonly Mock<ITextractService> _mockTextractService;
         private readonly Mock<IAiReviewService> _mockAiReviewService;
         private readonly Mock<IPdfReportService> _mockPdfReportService;
+        private readonly Mock<IPdfProcessingService> _mockPdfProcessingService;
         private readonly Mock<ILogger<DocumentsController>> _mockLogger;
         private readonly Mock<IMapper> _mockMapper;
 
@@ -35,6 +37,7 @@ namespace EasyFile.Tests.Controllers
             _mockTextractService = new Mock<ITextractService>();
             _mockAiReviewService = new Mock<IAiReviewService>();
             _mockPdfReportService = new Mock<IPdfReportService>();
+            _mockPdfProcessingService = new Mock<IPdfProcessingService>();
             _mockLogger = new Mock<ILogger<DocumentsController>>();
             _mockMapper = new Mock<IMapper>();
         }
@@ -46,7 +49,8 @@ namespace EasyFile.Tests.Controllers
             using var context = new AppDbContext(_dbContextOptions);
             var controller = new DocumentsController(
                 context, _mockDocumentService.Object, _mockTextractService.Object,
-                _mockAiReviewService.Object, _mockPdfReportService.Object, 
+                _mockAiReviewService.Object, _mockPdfReportService.Object,
+                _mockPdfProcessingService.Object,
                 _mockLogger.Object, _mockMapper.Object);
 
             // ACT: Try to delete a document ID that doesn't exist
@@ -71,7 +75,8 @@ namespace EasyFile.Tests.Controllers
 
             var controller = new DocumentsController(
                 context, _mockDocumentService.Object, _mockTextractService.Object,
-                _mockAiReviewService.Object, _mockPdfReportService.Object, 
+                _mockAiReviewService.Object, _mockPdfReportService.Object,
+                _mockPdfProcessingService.Object,
                 _mockLogger.Object, _mockMapper.Object);
 
             // ACT: Tell the controller to delete Document #1
@@ -104,7 +109,8 @@ namespace EasyFile.Tests.Controllers
 
             var controller = new DocumentsController(
                 context, _mockDocumentService.Object, _mockTextractService.Object,
-                _mockAiReviewService.Object, _mockPdfReportService.Object, 
+                _mockAiReviewService.Object, _mockPdfReportService.Object,
+                _mockPdfProcessingService.Object,
                 _mockLogger.Object, _mockMapper.Object);
 
             // ACT: Request the URL
