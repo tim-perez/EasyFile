@@ -162,13 +162,31 @@ namespace EasyFile.Controllers
             bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isValid) return Unauthorized(new { message = "Invalid credentials." });
 
-            var token = GenerateJwtToken(user);
+            return Ok(CreateAuthResponse(user, "Login successful."));
+        }
 
-            return Ok(new { 
-                id = user.Id, token = token, role = user.AccountType,
-                firstName = user.FirstName, lastName = user.LastName, email = user.Email,
-                message = "Login successful."
-            });
+        [HttpPost("verify-login")]
+        public async Task<IActionResult> VerifyAndLogin([FromBody] VerifyLoginDto request)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            
+            if (user == null || user.AccountType == "Banned") 
+            {
+                return Unauthorized(new { message = user?.AccountType == "Banned" ? "This account has been deactivated. Please contact support." : "Invalid credentials." });
+            }
+
+            bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            if (!isValid) return Unauthorized(new { message = "Invalid credentials." });
+
+            if (!user.IsEmailVerified)
+            {
+                user.IsEmailVerified = true;
+                user.VerificationToken = null;
+                user.VerificationTokenExpires = null;
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return Ok(CreateAuthResponse(user, "Email verified. Login successful."));
         }
 
         [HttpPost("guest-login")]
@@ -199,13 +217,7 @@ namespace EasyFile.Controllers
                 await _dbContext.SaveChangesAsync();
             }
 
-            var token = GenerateJwtToken(guestUser);
-
-            return Ok(new { 
-                id = guestUser.Id, token = token, role = guestUser.AccountType, 
-                firstName = guestUser.FirstName, lastName = guestUser.LastName, email = guestUser.Email,
-                message = "Guest login successful."
-            });
+            return Ok(CreateAuthResponse(guestUser, "Guest login successful."));
                 }
         [HttpGet("health")]
         [HttpHead("health")]
@@ -234,6 +246,19 @@ namespace EasyFile.Controllers
 
             var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddHours(2), signingCredentials: creds);
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private object CreateAuthResponse(User user, string message)
+        {
+            return new {
+                id = user.Id,
+                token = GenerateJwtToken(user),
+                role = user.AccountType,
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                email = user.Email,
+                message
+            };
         }
 
         private string GetFrontendBaseUrl()
