@@ -74,13 +74,13 @@ export default function ActionWidget() {
           </div>
           <p className="text-gray-600 dark:text-gray-400 mb-8 text-sm px-4 leading-relaxed">
             No submission reports are available yet. <br/>
-            Visit Submissions to upload legal files.
+            Upload legal PDFs to create your first submission.
           </p>
           <button 
-            onClick={() => navigate('/submissions')}
+            onClick={() => setIsUploadModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-full font-medium transition-colors shadow-sm flex items-center gap-2"
           >
-            Go to Submissions Tab
+            Upload Documents
           </button>
         </div>
       ) : (

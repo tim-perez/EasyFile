@@ -184,7 +184,16 @@ namespace EasyFile.Controllers
                 if (!string.IsNullOrWhiteSpace(queryParams.Status))
                     query = query.Where(d => d.Status == queryParams.Status);
                 if (!string.IsNullOrWhiteSpace(queryParams.SuggestedType))
-                    query = query.Where(d => d.EFilingDocType == queryParams.SuggestedType || d.DocumentTitle == queryParams.SuggestedType);
+                {
+                    var suggestedType = queryParams.SuggestedType;
+                    query = query.Where(d =>
+                        d.EFilingDocType == suggestedType ||
+                        d.DocumentTitle == suggestedType ||
+                        d.SuggestedDocumentTypes == suggestedType ||
+                        d.SuggestedDocumentTypes.StartsWith(suggestedType + "|") ||
+                        d.SuggestedDocumentTypes.Contains("|" + suggestedType + "|") ||
+                        d.SuggestedDocumentTypes.EndsWith("|" + suggestedType));
+                }
                 if (!string.IsNullOrWhiteSpace(queryParams.Prediction))
                     query = query.Where(d => d.Prediction == queryParams.Prediction);
                 if (queryParams.Fee.HasValue)
@@ -199,6 +208,7 @@ namespace EasyFile.Controllers
                 {
                     "filename" => isDesc ? query.OrderByDescending(d => d.FileName) : query.OrderBy(d => d.FileName),
                     "documenttitle" => isDesc ? query.OrderByDescending(d => d.DocumentTitle) : query.OrderBy(d => d.DocumentTitle),
+                    "suggesteddocumenttypes" => isDesc ? query.OrderByDescending(d => d.SuggestedDocumentTypes) : query.OrderBy(d => d.SuggestedDocumentTypes),
                     "submissionnumber" => isDesc ? query.OrderByDescending(d => d.Submission!.SubmissionNumber) : query.OrderBy(d => d.Submission!.SubmissionNumber),
                     "prediction" => isDesc ? query.OrderByDescending(d => d.Prediction) : query.OrderBy(d => d.Prediction),
                     "documentfee" => isDesc ? query.OrderByDescending(d => d.DocumentFee) : query.OrderBy(d => d.DocumentFee),
