@@ -6,6 +6,12 @@ namespace EasyFile.Models.DTOs
         public required string Password { get; set; }
     }
 
+    public class VerifyLoginDto
+    {
+        public required string Email { get; set; }
+        public required string Password { get; set; }
+    }
+
     public class RegisterDto
     {
         public required string AccountType { get; set; }

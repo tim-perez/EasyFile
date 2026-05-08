@@ -23,6 +23,7 @@ namespace EasyFile.Models.DTOs
         public required string Email { get; set; }
         public string? Phone { get; set; }
         public required string AccountType { get; set; }
+        public bool IsEmailVerified { get; set; }
     }
 
     public class AdminResetPasswordDto

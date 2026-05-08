@@ -95,9 +95,14 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">
-                Email Address
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email Address
+                </label>
+                <Link to="/verify-account" className="text-xs font-medium text-blue-600 hover:text-blue-500">
+                  Verify?
+                </Link>
+              </div>
               <input
                 type="email"
                 required

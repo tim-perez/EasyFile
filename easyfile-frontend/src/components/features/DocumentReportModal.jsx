@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from '../../services/api'; 
 
-export default function DocumentReportModal({ isOpen, onClose, document }) {
+export default function DocumentReportModal({ isOpen, onClose, document, zIndex = 50 }) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen || !document) return null;
@@ -65,7 +65,7 @@ export default function DocumentReportModal({ isOpen, onClose, document }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 transition-opacity backdrop-blur-sm p-6 md:p-12">      
+    <div className="fixed inset-0 flex items-center justify-center bg-black/60 transition-opacity backdrop-blur-sm p-6 md:p-12" style={{ zIndex }}>      
       <div className="bg-white dark:bg-[#1f1f1f] w-full max-w-4xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col transition-all overflow-hidden border border-gray-200 dark:border-gray-800">        
         
         {/* Header */}
