@@ -20,7 +20,7 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false); 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isColdStart, setIsColdStart] = useState(false); 
+  const [coldStartMessage, setColdStartMessage] = useState(''); 
   
   // New state to manage the success screen
   const [isRegistered, setIsRegistered] = useState(false);
@@ -36,7 +36,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatusMessage({ type: '', text: '' });
-    setIsColdStart(false);
+    setColdStartMessage('');
     
     if (formData.password !== formData.confirmPassword) {
       setStatusMessage({ type: 'error', text: 'Passwords do not match.' });
@@ -46,8 +46,11 @@ export default function Register() {
     setIsSubmitting(true);
 
     const coldStartTimer = setTimeout(() => {
-      setIsColdStart(true);
+      setColdStartMessage('Waking up secure database (approx. 30s)...');
     }, 2000);
+    const almostThereTimer = setTimeout(() => {
+      setColdStartMessage('Almost there, thank you for waiting...');
+    }, 30000);
 
     try {
       await api.post('/auth/register', {
@@ -64,12 +67,13 @@ export default function Register() {
       setIsRegistered(true);
 
     } catch (error) {
-      const errorMsg = error.response?.data?.message || 'An error occurred during registration. Please try again.';
+      const errorMsg = error.message || 'An error occurred during registration. Please try again.';
       setStatusMessage({ type: 'error', text: errorMsg });
     } finally {
       clearTimeout(coldStartTimer);
+      clearTimeout(almostThereTimer);
       setIsSubmitting(false);
-      setIsColdStart(false);
+      setColdStartMessage('');
     }
   };
 
@@ -250,17 +254,17 @@ export default function Register() {
               >
                 {!isSubmitting && 'Register'}
                 
-                {isSubmitting && !isColdStart && (
+                {isSubmitting && !coldStartMessage && (
                     <span>Registering...</span>
                 )}
 
-                {isSubmitting && isColdStart && (
+                {isSubmitting && coldStartMessage && (
                     <span className="flex items-center">
                         <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Waking up secure database (approx. 15s)...
+                        {coldStartMessage}
                     </span>
                 )}
               </button>

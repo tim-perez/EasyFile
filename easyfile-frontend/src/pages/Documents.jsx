@@ -7,6 +7,7 @@ import api from '../services/api';
 import SortableHeader from '../components/common/SortableHeader';
 import DocumentReportModal from '../components/features/DocumentReportModal'; 
 import EditDocumentModal from '../components/features/EditDocumentModal'; 
+import SubmissionReportModal from '../components/features/SubmissionReportModal';
 
 export default function Documents() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export default function Documents() {
 
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedReportDocument, setSelectedReportDocument] = useState(null);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   
@@ -115,6 +117,24 @@ export default function Documents() {
     }
   };
 
+  const handleOpenSubmissionReport = async (doc) => {
+    const submissionNumber = getSubmissionNumber(doc);
+    try {
+      const response = await api.get(`/submissions?SearchTerm=${encodeURIComponent(submissionNumber)}&pageNumber=1&pageSize=10`);
+      const submissions = response.data.items || response.data || [];
+      const matchingSubmission = submissions.find(submission => getSubmissionNumber({ submission }) === submissionNumber) || submissions[0];
+      if (matchingSubmission) setSelectedSubmission(matchingSubmission);
+    } catch (err) {
+      console.error("Failed to load submission report:", err);
+      alert("Unable to load the submission report.");
+    }
+  };
+
+  const handleViewSubmissionDocumentReport = (doc) => {
+    setSelectedReportDocument(doc);
+    setIsReportModalOpen(true);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown Date';
     return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -185,38 +205,31 @@ export default function Documents() {
 
         {isFilterMenuOpen && (
           <div className="absolute top-full left-0 mt-2 w-full max-w-4xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 shadow-xl rounded-xl p-4 z-50">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">AI Document Title</label>
-                <select value={activeFilters.documentTitle} onChange={(e) => setActiveFilters({ ...activeFilters, documentTitle: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
-                  <option value="">All Titles</option>
-                  {uniqueOptions.titles.map(t => <option key={t} value={t}>{t}</option>)}
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Suggested Type</label>
+                <select value={activeFilters.suggestedType} onChange={(e) => setActiveFilters({ ...activeFilters, suggestedType: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                  <option value="">All Suggested Types</option>
+                  {uniqueOptions.suggestedTypes.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Case Number</label>
-                <select value={activeFilters.caseNumber} onChange={(e) => setActiveFilters({ ...activeFilters, caseNumber: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
-                  <option value="">All Cases</option>
-                  {uniqueOptions.cases.map(c => <option key={c} value={c}>{c}</option>)}
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Prediction</label>
+                <select value={activeFilters.prediction} onChange={(e) => setActiveFilters({ ...activeFilters, prediction: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                  <option value="">All Predictions</option>
+                  {uniqueOptions.predictions.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">County</label>
-                <select value={activeFilters.county} onChange={(e) => setActiveFilters({ ...activeFilters, county: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
-                  <option value="">All Counties</option>
-                  {uniqueOptions.counties.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
-                <select value={activeFilters.status} onChange={(e) => setActiveFilters({ ...activeFilters, status: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
-                  <option value="">All Statuses</option>
-                  {uniqueOptions.statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fee</label>
+                <select value={activeFilters.fee} onChange={(e) => setActiveFilters({ ...activeFilters, fee: e.target.value })} className="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-700 rounded-lg text-sm p-2 outline-none focus:border-blue-500 dark:text-white">
+                  <option value="">All Fees</option>
+                  {uniqueOptions.fees.map(fee => <option key={fee} value={fee}>${Number(fee).toFixed(2)}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex justify-end mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <button onClick={() => setActiveFilters({ documentTitle: '', caseNumber: '', county: '', status: '' })} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition">Clear All Filters</button>
+              <button onClick={() => setActiveFilters({ documentTitle: '', caseNumber: '', county: '', status: '', suggestedType: '', prediction: '', fee: '' })} className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white transition">Clear All Filters</button>
             </div>
           </div>
         )}
@@ -315,7 +328,9 @@ export default function Documents() {
                             )}
                           </div>
                         )}
-                        <span className="text-sm font-mono font-semibold text-gray-900 dark:text-gray-100 truncate">#{getSubmissionNumber(doc)}</span>
+                        <button onClick={() => handleOpenSubmissionReport(doc)} className="text-sm font-mono font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate">
+                          #{getSubmissionNumber(doc)}
+                        </button>
                       </div>
 
                       {/* File Name - Increased to col-span-3 */}
@@ -350,7 +365,7 @@ export default function Documents() {
                       </div>
 
                       {/* Actions */}
-                      <div className="col-span-1 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="col-span-1 flex items-center justify-end gap-3">
                         <button onClick={() => { setSelectedReportDocument(doc); setIsReportModalOpen(true); }} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View</button>
                         {user?.role !== 'Guest' && (
                           <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
@@ -397,6 +412,7 @@ export default function Documents() {
       )}
 
       <DocumentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} document={selectedReportDocument} />
+      <SubmissionReportModal isOpen={Boolean(selectedSubmission)} onClose={() => setSelectedSubmission(null)} submission={selectedSubmission} onViewDocumentReport={handleViewSubmissionDocumentReport} onOpenDocument={handleOpenDocument} />
       <EditDocumentModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} selectedDocs={selectedDocumentObjects} onSuccess={fetchDocuments} />
     </div>
   );

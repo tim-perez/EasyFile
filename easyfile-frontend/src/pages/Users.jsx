@@ -142,7 +142,7 @@ export default function Users() {
       {/* THE GRID TABLE */}
       <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="w-full min-w-250">
+          <div className="w-full min-w-300">
             
             {/* TABLE HEADER */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -150,8 +150,10 @@ export default function Users() {
                 <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={processedUsers.length > 0 && selectedIds.length === processedUsers.length} onChange={(e) => handleSelectAll(e, processedUsers)} />
               </div>
               <SortableHeader label="ID" sortKey="id" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
-              <SortableHeader label="User" sortKey="name" colSpan={4} currentSort={sortConfig} onSort={handleSort} />
-              <SortableHeader label="Account Type" sortKey="accountType" colSpan={3} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="User" sortKey="name" colSpan={3} currentSort={sortConfig} onSort={handleSort} />
+              <div className="col-span-2">Business Name</div>
+              <div className="col-span-1">Phone Number</div>
+              <SortableHeader label="Account Type" sortKey="accountType" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
               <SortableHeader label="Date Joined" sortKey="date" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
               <div className="col-span-1 text-right">Actions</div>
             </div>
@@ -176,12 +178,20 @@ export default function Users() {
                       <span className="text-sm font-mono text-gray-500 dark:text-gray-400">#{u.id}</span>
                     </div>
 
-                    <div className="col-span-4 flex flex-col pr-4 overflow-hidden">
+                    <div className="col-span-3 flex flex-col pr-4 overflow-hidden">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{u.firstName} {u.lastName}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{u.email}</span>
                     </div>
 
-                    <div className="col-span-3 flex items-center pr-2">
+                    <div className="col-span-2 flex items-center pr-2 overflow-hidden">
+                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{u.businessName || ''}</span>
+                    </div>
+
+                    <div className="col-span-1 flex items-center pr-2 overflow-hidden">
+                      <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{u.phone || ''}</span>
+                    </div>
+
+                    <div className="col-span-1 flex items-center pr-2">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
                         ${u.accountType === 'Admin' ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800' : 
                           u.accountType === 'Guest' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800' : 
@@ -197,7 +207,7 @@ export default function Users() {
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Joined</span>
                     </div>
 
-                    <div className="col-span-1 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="col-span-1 flex items-center justify-end gap-3">
                       <button onClick={() => openEditModal(u)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium whitespace-nowrap">Edit</button>
                     </div>
 

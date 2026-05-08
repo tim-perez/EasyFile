@@ -14,7 +14,15 @@ export function useDocuments(endpoint = '/documents') {
   
   const [selectedIds, setSelectedIds] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
-  const [activeFilters, setActiveFilters] = useState({ documentTitle: '', caseNumber: '', county: '', status: '' });
+  const [activeFilters, setActiveFilters] = useState({
+    documentTitle: '',
+    caseNumber: '',
+    county: '',
+    status: '',
+    suggestedType: '',
+    prediction: '',
+    fee: ''
+  });
   const [searchQuery, setSearchQuery] = useState('');
 
   // Use a ref to track if it's the first render to prevent double-fetching
@@ -37,6 +45,9 @@ export function useDocuments(endpoint = '/documents') {
       if (activeFilters.caseNumber) params.append('CaseNumber', activeFilters.caseNumber);
       if (activeFilters.county) params.append('County', activeFilters.county);
       if (activeFilters.status) params.append('Status', activeFilters.status);
+      if (activeFilters.suggestedType) params.append('SuggestedType', activeFilters.suggestedType);
+      if (activeFilters.prediction) params.append('Prediction', activeFilters.prediction);
+      if (activeFilters.fee) params.append('Fee', activeFilters.fee);
 
       const response = await api.get(`${endpoint}?${params.toString()}`); 
       
@@ -74,7 +85,10 @@ export function useDocuments(endpoint = '/documents') {
     titles: [...new Set(documents.map(d => d.documentTitle || d.DocumentTitle).filter(Boolean))],
     cases: [...new Set(documents.map(d => d.caseNumber || d.CaseNumber).filter(Boolean))],
     counties: [...new Set(documents.map(d => d.county || d.County).filter(Boolean))],
-    statuses: [...new Set(documents.map(d => d.status || d.Status).filter(Boolean))]
+    statuses: [...new Set(documents.map(d => d.status || d.Status).filter(Boolean))],
+    suggestedTypes: [...new Set(documents.map(d => d.eFilingDocType || d.EFilingDocType || d.documentTitle || d.DocumentTitle).filter(Boolean))],
+    predictions: [...new Set(documents.map(d => d.prediction || d.Prediction).filter(Boolean))],
+    fees: [...new Set(documents.map(d => d.documentFee ?? d.DocumentFee).filter(fee => fee !== undefined && fee !== null))]
   }), [documents]);
 
   const handleSort = (key) => {

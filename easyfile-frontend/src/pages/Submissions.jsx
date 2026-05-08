@@ -298,7 +298,7 @@ export default function Submissions() {
                         <div className="col-span-1"><span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(submission.createdAt || submission.CreatedAt)}</span></div>
                         
                         {/* Actions */}
-                        <div className="col-span-2 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="col-span-2 flex items-center justify-end gap-3">
                           <button onClick={() => setSelectedSubmission(submission)} className="text-blue-500 hover:text-blue-700 text-sm font-medium">View Full Report</button>
                           {user?.role !== 'Guest' && (
                             <button onClick={() => handleDeleteSubmission(submission.id)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400" title="Move to Recycle Bin">
