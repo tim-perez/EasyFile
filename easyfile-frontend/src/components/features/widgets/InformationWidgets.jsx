@@ -16,10 +16,11 @@ export default function InformationWidgets() {
         <div className="aspect-video bg-gray-900 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden group border border-gray-200 dark:border-gray-800 shadow-inner">
           
           {isPlayingDemo ? (
+            /* 1. Embed URL added with autoplay so it starts when clicked */
             <iframe
               width="100%"
               height="100%"
-              src="https://www.youtube.com/embed/IvApdUT0ICk?autoplay=1"
+              src="https://www.youtube.com/embed/P_hF_U1MeVE?autoplay=1"
               title="EasyFile Demo"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -28,21 +29,20 @@ export default function InformationWidgets() {
               className="absolute inset-0 w-full h-full"
             ></iframe>
           ) : (
+            /* 2. Fetched the max resolution thumbnail for the video ID */
             <div 
               onClick={() => setIsPlayingDemo(true)}
-              className="w-full h-full flex flex-col items-center justify-center cursor-pointer"
+              className="w-full h-full flex flex-col items-center justify-center cursor-pointer bg-black"
               style={{
-                backgroundImage: `url('https://img.youtube.com/vi/IvApdUT0ICk/maxresdefault.jpg')`,
+                backgroundImage: `url('https://img.youtube.com/vi/P_hF_U1MeVE/maxresdefault.jpg')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}
             >
-              {/* Dark overlay to make the red play button pop */}
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
 
               <div className="relative z-10 flex flex-col items-center gap-2">
                 <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center text-white shadow-2xl group-hover:scale-110 transition-transform">
-                  {/* Play icon shifted slightly right to look optically centered */}
                   <svg className="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                 </div>
               </div>
@@ -59,9 +59,9 @@ export default function InformationWidgets() {
           In this demo, we walk you through the process of uploading a document and how our AI-powered system automatically extracts key information, categorizes it, and generates a comprehensive report. Say goodbye to manual data entry and hello to effortless document management!
         </p>
         
-        {/* 2. THE CLICKABLE BOTTOM BUTTON */}
+        {/* 3. Added the direct URL to the external button */}
         <button 
-          onClick={() => window.open('https://www.youtube.com/watch?v=IvApdUT0ICk', '_blank')}
+          onClick={() => window.open('https://youtu.be/P_hF_U1MeVE', '_blank')}
           className="w-full text-sm font-semibold bg-gray-100 dark:bg-[#ffffff1a] hover:bg-gray-200 dark:hover:bg-[#ffffff2a] text-gray-900 dark:text-white py-2.5 rounded-full transition-all"
         >
           Watch on YouTube
