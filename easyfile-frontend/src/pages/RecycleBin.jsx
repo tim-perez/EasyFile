@@ -119,7 +119,7 @@ export default function RecycleBin() {
                       <span className="text-sm text-red-600 dark:text-red-400 whitespace-nowrap">{formatDate(deletedAt(submission))}</span>
                     </div>
 
-                    <div className="col-span-3 flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="col-span-3 flex items-center justify-end gap-3">
                       <button onClick={() => handleRestore(submission.id)} className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20" title="Restore">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                       </button>

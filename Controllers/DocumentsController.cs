@@ -171,7 +171,8 @@ namespace EasyFile.Controllers
                         (d.FileName != null && d.FileName.ToLower().Contains(search)) ||
                         (d.DocumentTitle != null && d.DocumentTitle.ToLower().Contains(search)) ||
                         (d.CaseNumber != null && d.CaseNumber.ToLower().Contains(search)) ||
-                        (d.County != null && d.County.ToLower().Contains(search)));
+                        (d.County != null && d.County.ToLower().Contains(search)) ||
+                        (d.Submission != null && d.Submission.SubmissionNumber.ToLower().Contains(search)));
                 }
 
                 if (!string.IsNullOrWhiteSpace(queryParams.DocumentTitle))
@@ -182,6 +183,12 @@ namespace EasyFile.Controllers
                     query = query.Where(d => d.County == queryParams.County);
                 if (!string.IsNullOrWhiteSpace(queryParams.Status))
                     query = query.Where(d => d.Status == queryParams.Status);
+                if (!string.IsNullOrWhiteSpace(queryParams.SuggestedType))
+                    query = query.Where(d => d.EFilingDocType == queryParams.SuggestedType || d.DocumentTitle == queryParams.SuggestedType);
+                if (!string.IsNullOrWhiteSpace(queryParams.Prediction))
+                    query = query.Where(d => d.Prediction == queryParams.Prediction);
+                if (queryParams.Fee.HasValue)
+                    query = query.Where(d => d.DocumentFee == queryParams.Fee.Value);
 
                 // 3. Count total records BEFORE paginating (needed for the frontend UI)
                 var totalCount = await query.CountAsync();
@@ -518,9 +525,12 @@ namespace EasyFile.Controllers
 
                 if (userRole != "Admin") query = query.Where(d => d.UploaderId == userId);
 
-                var total = await query.CountAsync();
-                var processed = await query.CountAsync(d => d.Status == "Processed");
-                var incomplete = await query.CountAsync(d => d.Status == "Incomplete" || d.Status == "Pending");
+                var totalDocuments = await query.CountAsync();
+                var accepted = await query.CountAsync(d => d.Prediction == "Accepted");
+                var rejected = await query.CountAsync(d => d.Prediction == "Rejected");
+                var totalSubmissions = await _dbContext.Submissions
+                    .Where(s => s.Recycled == false && (userRole == "Admin" || s.UploaderId == userId))
+                    .CountAsync();
 
                 var topCounties = await query
                     .Where(d => d.County != "Unknown" && !string.IsNullOrEmpty(d.County))
@@ -530,7 +540,7 @@ namespace EasyFile.Controllers
                     .Take(3)
                     .ToListAsync();
 
-                return Ok(new { total, processed, incomplete, topCounties });
+                return Ok(new { total = totalDocuments, totalDocuments, totalSubmissions, accepted, rejected, topCounties });
             }
             catch (Exception ex)
             {

@@ -6,7 +6,7 @@ import api from '../../../services/api';
 export default function AnalyticsWidget() {
   const { user } = useAuth();
   
-  const [stats, setStats] = useState({ total: 0, processed: 0, incomplete: 0 });
+  const [stats, setStats] = useState({ total: 0, totalDocuments: 0, totalSubmissions: 0, accepted: 0, rejected: 0 });
   const [topCounties, setTopCounties] = useState([]);
   
   const [adminStats, setAdminStats] = useState({ totalUsers: 0, activeGuests: 0 });
@@ -21,17 +21,19 @@ export default function AnalyticsWidget() {
         const analyticsRes = await api.get('/documents/analytics');
         setStats({
           total: analyticsRes.data.total,
-          processed: analyticsRes.data.processed,
-          incomplete: analyticsRes.data.incomplete
+          totalDocuments: analyticsRes.data.totalDocuments ?? analyticsRes.data.total,
+          totalSubmissions: analyticsRes.data.totalSubmissions ?? 0,
+          accepted: analyticsRes.data.accepted ?? 0,
+          rejected: analyticsRes.data.rejected ?? 0
         });
         setTopCounties(analyticsRes.data.topCounties);
 
         // Fetch user stats (safely checking if it's an array or paginated)
         if (user?.role === 'Admin') {
-          const usersRes = await api.get('/users/all');
+          const usersRes = await api.get('/users/all?pageNumber=1&pageSize=1000');
           const usersList = usersRes.data.items || usersRes.data; 
           setAdminStats({
-            totalUsers: usersList.length,
+            totalUsers: usersList.filter(u => u.accountType !== 'Guest').length,
             activeGuests: usersList.filter(u => u.accountType === 'Guest').length
           });
         }
@@ -58,11 +60,11 @@ export default function AnalyticsWidget() {
           <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Admin View</span>
         )}
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Total uploaded documents</p>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{user?.role === 'Admin' ? 'Total submissions from all users' : 'Total uploaded documents'}</p>
       
       {/* Big Number */}
       <div className="text-[3.5rem] leading-none font-light mb-6 text-gray-900 dark:text-white">
-        {isLoading ? '-' : stats.total}
+        {isLoading ? '-' : user?.role === 'Admin' ? stats.totalSubmissions : stats.total}
       </div>
       
       {user?.role !== 'Admin' ? (
@@ -72,12 +74,12 @@ export default function AnalyticsWidget() {
             <h3 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">Summary</h3>
             <div className="space-y-3 mt-3">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-300">Processed</span>
-                <span className="font-medium text-gray-900 dark:text-white">{isLoading ? '-' : stats.processed}</span>
+              <span className="text-gray-600 dark:text-gray-300">Accepted</span>
+                <span className="font-medium text-green-600 dark:text-green-400">{isLoading ? '-' : stats.accepted}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600 dark:text-gray-300">Incomplete</span>
-                <span className="font-medium text-amber-600 dark:text-amber-400">{isLoading ? '-' : stats.incomplete}</span>
+                <span className="text-gray-600 dark:text-gray-300">Rejected</span>
+                <span className="font-medium text-red-600 dark:text-red-400">{isLoading ? '-' : stats.rejected}</span>
               </div>
             </div>
           </div>
@@ -109,6 +111,25 @@ export default function AnalyticsWidget() {
                 <div className="text-xs text-orange-500/80">Pending 24hr purge</div>
               </div>
               <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{isLoading ? '-' : adminStats.activeGuests}</div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
+              <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">Total Documents Uploaded</div>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{isLoading ? '-' : stats.totalDocuments}</div>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+              <h3 className="text-sm font-semibold mb-1 text-gray-900 dark:text-white">Summary</h3>
+              <div className="space-y-3 mt-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Accepted Documents</span>
+                  <span className="font-medium text-green-600 dark:text-green-400">{isLoading ? '-' : stats.accepted}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Rejected Documents</span>
+                  <span className="font-medium text-red-600 dark:text-red-400">{isLoading ? '-' : stats.rejected}</span>
+                </div>
+              </div>
             </div>
           </div>
         </>

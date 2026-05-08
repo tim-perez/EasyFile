@@ -9,9 +9,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isColdStart, setIsColdStart] = useState(false);
+  const [coldStartMessage, setColdStartMessage] = useState('');
   const [isGuestLoading, setIsGuestLoading] = useState(false);
-  const [isGuestColdStart, setIsGuestColdStart] = useState(false);
+  const [guestColdStartMessage, setGuestColdStartMessage] = useState('');
 
 
   // Enterprise pattern: Using the custom hook instead of raw useContext
@@ -22,12 +22,15 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setIsColdStart(false);
+    setColdStartMessage('');
 
 
     const coldStartTimer = setTimeout(() => {
-      setIsColdStart(true);
+      setColdStartMessage('Waking up secure database (approx. 30s)...');
     }, 2000);
+    const almostThereTimer = setTimeout(() => {
+      setColdStartMessage('Almost there, thank you for waiting...');
+    }, 30000);
 
     try {
       await login(email, password);
@@ -36,19 +39,23 @@ export default function Login() {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       clearTimeout(coldStartTimer);
+      clearTimeout(almostThereTimer);
       setLoading(false);
-      setIsColdStart(false);
+      setColdStartMessage('');
     }
   };
 
   const handleGuestLogin = async (e) => { 
     e.preventDefault(); 
     setIsGuestLoading(true);
-    setIsGuestColdStart(false);
+    setGuestColdStartMessage('');
 
     const guestColdStartTimer = setTimeout(() => {
-      setIsGuestColdStart(true);
+      setGuestColdStartMessage('Waking up secure database (approx. 30s)...');
     }, 2000);
+    const guestAlmostThereTimer = setTimeout(() => {
+      setGuestColdStartMessage('Almost there, thank you for waiting...');
+    }, 30000);
 
     try {
       await loginAsGuest(); 
@@ -58,8 +65,9 @@ export default function Login() {
       setError('Guest login failed. Please try again.');
     } finally {
       clearTimeout(guestColdStartTimer);
+      clearTimeout(guestAlmostThereTimer);
       setIsGuestLoading(false);
-      setIsGuestColdStart(false);
+      setGuestColdStartMessage('');
     }
   };
 
@@ -145,17 +153,17 @@ export default function Login() {
               >
                 {!loading && 'Sign In'}
                 
-                {loading && !isColdStart && (
+                {loading && !coldStartMessage && (
                     <span>Authenticating...</span>
                 )}
 
-                {loading && isColdStart && (
+                {loading && coldStartMessage && (
                     <span className="flex items-center">
                         <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Waking up secure database (approx. 15s)...
+                        {coldStartMessage}
                     </span>
                 )}
               </button>
@@ -182,17 +190,17 @@ export default function Login() {
             >
                 {!isGuestLoading && 'Continue as Guest'}
                 
-                {isGuestLoading && !isGuestColdStart && (
+                {isGuestLoading && !guestColdStartMessage && (
                     <span>Authenticating...</span>
                 )}
 
-                {isGuestLoading && isGuestColdStart && (
+                {isGuestLoading && guestColdStartMessage && (
                     <span className="flex items-center">
                         <svg className="animate-spin h-4 w-4 mr-2 text-gray-700 dark:text-gray-200" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Waking up secure database (approx. 15s)...
+                        {guestColdStartMessage}
                     </span>
                 )}
             </button>

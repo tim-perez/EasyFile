@@ -16,5 +16,8 @@ namespace EasyFile.Models.Pagination
         public string? CaseNumber { get; set; }
         public string? County { get; set; }
         public string? Status { get; set; }
+        public string? SuggestedType { get; set; }
+        public string? Prediction { get; set; }
+        public decimal? Fee { get; set; }
     }
 }

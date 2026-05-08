@@ -11,7 +11,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json'
     },
-    timeout: 120000 
+    timeout: 240000 
 });
 
 // ==========================================
@@ -49,9 +49,11 @@ api.interceptors.response.use(
         }
 
         const customError = new Error(
-            error.response?.data?.message || 
-            error.response?.data?.title || 
-            "An unexpected network error occurred."
+            error.code === 'ECONNABORTED'
+                ? "Sorry, please try again."
+                : error.response?.data?.message || 
+                  error.response?.data?.title || 
+                  "An unexpected network error occurred."
         );
         customError.status = error.response?.status;
 
