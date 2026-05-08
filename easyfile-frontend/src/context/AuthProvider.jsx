@@ -28,25 +28,39 @@ export const AuthProvider = ({ children }) => {
         return null;
     });
 
+    const persistAuthenticatedUser = (responseData, isGuest = false) => {
+        const { id, token, role, firstName, lastName, email } = responseData;
+
+        localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+        localStorage.setItem(STORAGE_KEYS.ROLE, role);
+
+        const userData = { id, firstName, lastName, email, isGuest };
+        localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+
+        setUser({ token, role, ...userData });
+    };
+
     const login = async (email, password) => {
         try {
             setLoading(true);
             const response = await api.post('/auth/login', { email, password });
-            
-            const { id, token, role, firstName, lastName, email: userEmail } = response.data; 
-            
-            // 2. Save token and role for the API service
-            localStorage.setItem(STORAGE_KEYS.TOKEN, token);
-            localStorage.setItem(STORAGE_KEYS.ROLE, role);
-            
-            // 3. Bundle the rest into a single JSON object for the UI
-            const userData = { id, firstName, lastName, email: userEmail, isGuest: false };
-            localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
-            
-            setUser({ token, role, ...userData }); 
+            persistAuthenticatedUser(response.data);
         } catch (error) {
             console.error("Authentication failed:", error);
             throw error; 
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyAndLogin = async (email, password) => {
+        try {
+            setLoading(true);
+            const response = await api.post('/auth/verify-login', { email, password });
+            persistAuthenticatedUser(response.data);
+        } catch (error) {
+            console.error("Verification login failed:", error);
+            throw error;
         } finally {
             setLoading(false);
         }
@@ -59,16 +73,8 @@ export const AuthProvider = ({ children }) => {
             const savedGuestEmail = localStorage.getItem(STORAGE_KEYS.GUEST_EMAIL);
             const response = await api.post('/auth/guest-login', { guestEmail: savedGuestEmail });
             
-            const { id, token, role, firstName, lastName, email } = response.data;
-            
-            localStorage.setItem(STORAGE_KEYS.TOKEN, token);
-            localStorage.setItem(STORAGE_KEYS.ROLE, role);
-            localStorage.setItem(STORAGE_KEYS.GUEST_EMAIL, email); 
-            
-            const userData = { id, firstName, lastName, email, isGuest: true };
-            localStorage.setItem(UI_STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
-
-            setUser({ token, role, ...userData });
+            localStorage.setItem(STORAGE_KEYS.GUEST_EMAIL, response.data.email); 
+            persistAuthenticatedUser(response.data, true);
         } catch (error) {
             console.error("Guest login failed:", error);
             throw error;
@@ -97,7 +103,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, loginAsGuest, logout, loading, updateUserContext }}>
+        <AuthContext.Provider value={{ user, login, verifyAndLogin, loginAsGuest, logout, loading, updateUserContext }}>
             {children}
         </AuthContext.Provider>
     );

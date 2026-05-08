@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthProvider';
 import api from '../../../services/api'; 
+import UploadDocumentModal from '../UploadDocumentModal';
 import SubmissionReportModal from '../SubmissionReportModal';
 import DocumentReportModal from '../DocumentReportModal';
 
@@ -11,6 +12,7 @@ export default function ActionWidget() {
   const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userDictionary, setUserDictionary] = useState({});
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [selectedReportDoc, setSelectedReportDoc] = useState(null);
@@ -86,11 +88,11 @@ export default function ActionWidget() {
           <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Recent Submissions</h2>
             <button 
-              onClick={() => navigate('/submissions')}
+              onClick={() => setIsUploadModalOpen(true)}
               className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-2 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-              title="Go to Submissions Tab"
+              title="Upload New Documents"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             </button>
           </div>
 
@@ -147,6 +149,7 @@ export default function ActionWidget() {
         </div>
       )}
 
+      <UploadDocumentModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
       <SubmissionReportModal isOpen={Boolean(selectedSubmission)} onClose={() => setSelectedSubmission(null)} submission={selectedSubmission} onViewDocumentReport={setSelectedReportDoc} onOpenDocument={handleOpenDocument} />
       <DocumentReportModal isOpen={Boolean(selectedReportDoc)} onClose={() => setSelectedReportDoc(null)} document={selectedReportDoc} />
     </div>

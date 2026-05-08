@@ -21,7 +21,7 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState(null);
   const [editError, setEditError] = useState(''); 
   const [editFormData, setEditFormData] = useState({
-    firstName: '', lastName: '', email: '', phone: '', businessName: '', accountType: '', newPassword: ''
+    firstName: '', lastName: '', email: '', phone: '', businessName: '', accountType: '', isEmailVerified: false, newPassword: ''
   });
 
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -56,7 +56,7 @@ export default function Users() {
     setEditFormData({
       firstName: u.firstName, lastName: u.lastName, email: u.email, 
       phone: u.phone || '', businessName: u.businessName || '', 
-      accountType: u.accountType, newPassword: '' 
+      accountType: u.accountType, isEmailVerified: Boolean(u.isEmailVerified), newPassword: '' 
     });
     setIsEditModalOpen(true);
   };
@@ -68,7 +68,9 @@ export default function Users() {
       await api.put(`/users/admin-update/${editingUser.id}`, {
         firstName: editFormData.firstName, lastName: editFormData.lastName,
         email: editFormData.email, phone: editFormData.phone,
-        businessName: editFormData.businessName, accountType: editFormData.accountType
+        businessName: editFormData.businessName,
+        accountType: editFormData.accountType,
+        isEmailVerified: editFormData.isEmailVerified
       });
 
       if (editFormData.newPassword.trim() !== '') {
@@ -142,7 +144,7 @@ export default function Users() {
       {/* THE GRID TABLE */}
       <div className="bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <div className="w-full min-w-300">
+          <div className="w-full min-w-320">
             
             {/* TABLE HEADER */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1a1a1a] text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -150,10 +152,11 @@ export default function Users() {
                 <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={processedUsers.length > 0 && selectedIds.length === processedUsers.length} onChange={(e) => handleSelectAll(e, processedUsers)} />
               </div>
               <SortableHeader label="ID" sortKey="id" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
-              <SortableHeader label="User" sortKey="name" colSpan={3} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="User" sortKey="name" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
               <div className="col-span-2">Business Name</div>
               <div className="col-span-1">Phone Number</div>
               <SortableHeader label="Account Type" sortKey="accountType" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+              <SortableHeader label="Verified" sortKey="verified" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
               <SortableHeader label="Date Joined" sortKey="date" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
               <div className="col-span-1 text-right">Actions</div>
             </div>
@@ -178,7 +181,7 @@ export default function Users() {
                       <span className="text-sm font-mono text-gray-500 dark:text-gray-400">#{u.id}</span>
                     </div>
 
-                    <div className="col-span-3 flex flex-col pr-4 overflow-hidden">
+                    <div className="col-span-2 flex flex-col pr-4 overflow-hidden">
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-200 truncate">{u.firstName} {u.lastName}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{u.email}</span>
                     </div>
@@ -199,6 +202,12 @@ export default function Users() {
                           'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800'}`}
                       >
                         {u.accountType}
+                      </span>
+                    </div>
+
+                    <div className="col-span-1 flex items-center pr-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${u.isEmailVerified ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' : 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'}`}>
+                        {u.isEmailVerified ? 'Yes' : 'No'}
                       </span>
                     </div>
 
@@ -284,6 +293,17 @@ export default function Users() {
                 <input type="email" required value={editFormData.email} onChange={e => setEditFormData({...editFormData, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg dark:bg-[#2a2a2a] dark:border-gray-600 dark:text-white outline-none focus:border-blue-500" />
               </div>
 
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Business Name</label>
+                  <input type="text" value={editFormData.businessName} onChange={e => setEditFormData({...editFormData, businessName: e.target.value})} className="w-full px-3 py-2 border rounded-lg dark:bg-[#2a2a2a] dark:border-gray-600 dark:text-white outline-none focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
+                  <input type="tel" value={editFormData.phone} onChange={e => setEditFormData({...editFormData, phone: e.target.value})} className="w-full px-3 py-2 border rounded-lg dark:bg-[#2a2a2a] dark:border-gray-600 dark:text-white outline-none focus:border-blue-500" />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Type</label>
@@ -299,6 +319,11 @@ export default function Users() {
                   <input type="text" placeholder="Leave blank to keep current" value={editFormData.newPassword} onChange={e => setEditFormData({...editFormData, newPassword: e.target.value})} className="w-full px-3 py-2 border rounded-lg dark:bg-[#2a2a2a] dark:border-gray-600 dark:text-white outline-none focus:border-blue-500 placeholder-gray-400 dark:placeholder-gray-500" />
                 </div>
               </div>
+
+              <label className="flex items-center gap-3 mb-6 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5 cursor-pointer">
+                <input type="checkbox" checked={editFormData.isEmailVerified} onChange={e => setEditFormData({...editFormData, isEmailVerified: e.target.checked})} className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Verify this user's email</span>
+              </label>
 
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors">Cancel</button>

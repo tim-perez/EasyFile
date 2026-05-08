@@ -128,6 +128,7 @@ namespace EasyFile.Controllers
                     "id" => isDesc ? query.OrderByDescending(u => u.Id) : query.OrderBy(u => u.Id),
                     "name" => isDesc ? query.OrderByDescending(u => u.FirstName).ThenByDescending(u => u.LastName) : query.OrderBy(u => u.FirstName).ThenBy(u => u.LastName),
                     "accounttype" => isDesc ? query.OrderByDescending(u => u.AccountType) : query.OrderBy(u => u.AccountType),
+                    "verified" => isDesc ? query.OrderByDescending(u => u.IsEmailVerified) : query.OrderBy(u => u.IsEmailVerified),
                     _ => isDesc ? query.OrderByDescending(u => u.CreatedAt) : query.OrderBy(u => u.CreatedAt)
                 };
 
@@ -136,7 +137,7 @@ namespace EasyFile.Controllers
                     .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
                     .Take(queryParams.PageSize)
                     .Select(u => new { 
-                        u.Id, u.FirstName, u.LastName, u.Email, u.AccountType, u.BusinessName, u.Phone, u.CreatedAt
+                        u.Id, u.FirstName, u.LastName, u.Email, u.AccountType, u.BusinessName, u.Phone, u.IsEmailVerified, u.CreatedAt
                     })
                     .ToListAsync();
 

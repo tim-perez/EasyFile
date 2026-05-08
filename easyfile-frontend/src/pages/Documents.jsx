@@ -262,11 +262,11 @@ export default function Documents() {
                   <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-transparent cursor-pointer" checked={documents.length > 0 && selectedIds.length === documents.length} onChange={(e) => handleSelectAll(e, documents)} />
                 </div>
                 <SortableHeader label="Submission #" sortKey="submissionNumber" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="File Name" sortKey="fileName" colSpan={3} currentSort={sortConfig} onSort={handleSort} />               
+                <SortableHeader label="File Name" sortKey="fileName" colSpan={2} currentSort={sortConfig} onSort={handleSort} />               
                 <SortableHeader label="Suggested Type" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Fee" sortKey="documentFee" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Prediction" sortKey="prediction" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
-                <SortableHeader label="Date" sortKey="date" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Date" sortKey="date" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
                 <div className="col-span-1 text-right">Actions</div>
               </div>
 
@@ -333,8 +333,8 @@ export default function Documents() {
                         </button>
                       </div>
 
-                      {/* File Name - Increased to col-span-3 */}
-                      <div className="col-span-3 flex flex-col justify-center overflow-hidden pr-2">
+                      {/* File Name */}
+                      <div className="col-span-2 flex flex-col justify-center overflow-hidden pr-2">
                         <button onClick={() => handleOpenDocument(doc.id)} className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate text-left transition-colors">
                           {doc.fileName || doc.FileName || 'Unknown File'}
                         </button>
@@ -359,7 +359,7 @@ export default function Documents() {
                       </div>
 
                       {/* Date */}
-                      <div className="col-span-1 flex flex-col justify-center">
+                      <div className="col-span-2 flex flex-col justify-center">
                         <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(doc.createdAt || doc.CreatedAt || doc.uploadDate)}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Uploaded</span>
                       </div>
@@ -411,7 +411,7 @@ export default function Documents() {
         </div>
       )}
 
-      <DocumentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} document={selectedReportDocument} />
+      <DocumentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} document={selectedReportDocument} zIndex={70} />
       <SubmissionReportModal isOpen={Boolean(selectedSubmission)} onClose={() => setSelectedSubmission(null)} submission={selectedSubmission} onViewDocumentReport={handleViewSubmissionDocumentReport} onOpenDocument={handleOpenDocument} />
       <EditDocumentModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} selectedDocs={selectedDocumentObjects} onSuccess={fetchDocuments} />
     </div>
