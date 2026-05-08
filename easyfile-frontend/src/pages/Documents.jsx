@@ -8,6 +8,7 @@ import SortableHeader from '../components/common/SortableHeader';
 import DocumentReportModal from '../components/features/DocumentReportModal'; 
 import EditDocumentModal from '../components/features/EditDocumentModal'; 
 import SubmissionReportModal from '../components/features/SubmissionReportModal';
+import { getPrimarySuggestedDocumentType } from '../utils/documentTypes';
 
 export default function Documents() {
   const { user } = useAuth();
@@ -263,7 +264,7 @@ export default function Documents() {
                 </div>
                 <SortableHeader label="Submission #" sortKey="submissionNumber" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="File Name" sortKey="fileName" colSpan={2} currentSort={sortConfig} onSort={handleSort} />               
-                <SortableHeader label="Suggested Type" sortKey="documentTitle" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
+                <SortableHeader label="Suggested Type" sortKey="suggestedDocumentTypes" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Fee" sortKey="documentFee" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Prediction" sortKey="prediction" colSpan={1} currentSort={sortConfig} onSort={handleSort} />
                 <SortableHeader label="Date" sortKey="date" colSpan={2} currentSort={sortConfig} onSort={handleSort} />
@@ -343,7 +344,7 @@ export default function Documents() {
                       
                       {/* Suggested Type */}
                       <div className="col-span-2 flex items-center pr-2 overflow-hidden">
-                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">{doc.eFilingDocType || doc.EFilingDocType || doc.documentTitle || doc.DocumentTitle || 'Unknown'}</span>
+                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">{getPrimarySuggestedDocumentType(doc)}</span>
                       </div>
 
                       {/* Fee */}

@@ -8,6 +8,7 @@ import SortableHeader from '../components/common/SortableHeader';
 import DocumentReportModal from '../components/features/DocumentReportModal';
 import SubmissionReportModal from '../components/features/SubmissionReportModal';
 import EditDocumentModal from '../components/features/EditDocumentModal'; 
+import { getPrimarySuggestedDocumentType } from '../utils/documentTypes';
 
 export default function Submissions() {
   const { user } = useAuth();
@@ -317,7 +318,7 @@ export default function Submissions() {
                               {docs.map(doc => (
                                 <div key={doc.id} className="grid grid-cols-12 gap-4 items-center bg-white dark:bg-[#202020] border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3">
                                   <button onClick={() => handleOpenDocument(doc.id)} className="col-span-4 text-left text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate">{doc.fileName || doc.FileName}</button>
-                                  <span className="col-span-3 text-sm text-gray-700 dark:text-gray-300 truncate">{doc.eFilingDocType || doc.EFilingDocType || doc.documentTitle || doc.DocumentTitle || 'Unknown'}</span>
+                                  <span className="col-span-3 text-sm text-gray-700 dark:text-gray-300 truncate">{getPrimarySuggestedDocumentType(doc)}</span>
                                   <span className={`col-span-2 text-xs font-bold uppercase w-fit px-2 py-0.5 rounded ${doc.prediction === 'Rejected' || doc.Prediction === 'Rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>{doc.prediction || doc.Prediction || 'Unknown'}</span>
                                   <button onClick={() => setSelectedDocument(doc)} className="col-span-3 text-right text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400">View Full Report</button>
                                 </div>
