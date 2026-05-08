@@ -1,21 +1,11 @@
 import React, { useState } from 'react';
 import api from '../../services/api'; 
+import { parsePipeList } from '../../utils/documentTypes';
 
 export default function DocumentReportModal({ isOpen, onClose, document, zIndex = 50 }) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen || !document) return null;
-
-  // Safely parse arrays from C# backend
-  const safeParseArray = (data) => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    try {
-        return JSON.parse(data);
-    } catch {
-        return data.split('|').filter(w => w.trim() !== '');
-    }
-  };
 
   const isSubstantiveWarning = (warning) => {
     const normalized = String(warning || '').trim().toLowerCase();
@@ -26,9 +16,9 @@ export default function DocumentReportModal({ isOpen, onClose, document, zIndex 
       && normalized !== '[]';
   };
 
-  const parsedWarnings = safeParseArray(document.warnings || document.Warnings);
+  const parsedWarnings = parsePipeList(document.warnings || document.Warnings);
   const realWarnings = parsedWarnings.filter(isSubstantiveWarning);
-  const suggestedTypes = safeParseArray(document.suggestedDocumentTypes || document.SuggestedDocumentTypes);
+  const suggestedTypes = parsePipeList(document.suggestedDocumentTypes || document.SuggestedDocumentTypes);
   
   const fee = document.documentFee ?? document.DocumentFee ?? document.estimatedFee ?? document.EstimatedFee ?? '$0.00';
   const storedPrediction = document.prediction || document.Prediction || 'Unknown';

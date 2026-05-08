@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import api from '../services/api';
+import { getPrimarySuggestedDocumentType } from '../utils/documentTypes';
 
 export function useDocuments(endpoint = '/documents') {
   // 1. New Pagination State
@@ -86,7 +87,7 @@ export function useDocuments(endpoint = '/documents') {
     cases: [...new Set(documents.map(d => d.caseNumber || d.CaseNumber).filter(Boolean))],
     counties: [...new Set(documents.map(d => d.county || d.County).filter(Boolean))],
     statuses: [...new Set(documents.map(d => d.status || d.Status).filter(Boolean))],
-    suggestedTypes: [...new Set(documents.map(d => d.eFilingDocType || d.EFilingDocType || d.documentTitle || d.DocumentTitle).filter(Boolean))],
+    suggestedTypes: [...new Set(documents.map(getPrimarySuggestedDocumentType).filter(Boolean))],
     predictions: [...new Set(documents.map(d => d.prediction || d.Prediction).filter(Boolean))],
     fees: [...new Set(documents.map(d => d.documentFee ?? d.DocumentFee).filter(fee => fee !== undefined && fee !== null))]
   }), [documents]);
