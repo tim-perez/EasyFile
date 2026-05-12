@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EasyFile.Data;
 using EasyFile.Interfaces;
-namespace EasyFile.API.Services
+namespace EasyFile.Services
 {
     public class GuestCleanupService : BackgroundService
     {
